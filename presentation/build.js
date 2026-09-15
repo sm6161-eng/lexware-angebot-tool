@@ -351,6 +351,7 @@ async function main() {
       background: { path: bg },
       objects: [
         logo('dark', 8.55, 0.4, 'small'), title(),
+        ph('sub', 'body', 'Eine Auswahl unserer Kunden', { x: 0.5, y: 1.0, w: 7.8, h: 0.3, fontSize: FS.sub, align: 'left', valign: 'middle', ...MUTED_ON_LIGHT }),
         ...Array.from({ length: grid.rows }, (_, r) => r).flatMap((r) => Array.from({ length: grid.cols }, (_, c) => c).flatMap((c) => {
           const n = r * grid.cols + c + 1, [x, y, w] = G.logoGrid(grid, r, c);
           const items = [pic(`logo${n}`, G.logoGrid(grid, r, c), 'Logo einfügen')];
@@ -544,10 +545,10 @@ async function main() {
   // Logos alphabetisch (z. B. 01-firma.png), freie Felder bleiben Platzhalter
   const refRoot = path.join(ASSETS, 'referenzen');
   const refGroups = [
-    ['unternehmen', 'Unternehmen, die uns vertrauen', 'MS_REFERENZEN', REF_GRID.breit],
-    ['vereine', 'Vereine, die uns vertrauen', 'MS_REFERENZEN_WAPPEN', REF_GRID.hoch],
+    ['unternehmen', 'Unternehmen, die uns vertrauen', 'MS_REFERENZEN', REF_GRID.breit, 'Eine Auswahl. Viele weitere Unternehmen und Teams aus der Region lassen bei uns veredeln.'],
+    ['vereine', 'Vereine, die uns vertrauen', 'MS_REFERENZEN_WAPPEN', REF_GRID.hoch, 'Eine Auswahl. Vom Trikotsatz bis zur Fanausstattung, für Vereine aus der ganzen Region.'],
   ];
-  for (const [group, titel, layout, grid] of refGroups) {
+  for (const [group, titel, layout, grid, unterzeile] of refGroups) {
     const refDir = path.join(refRoot, group);
     const refs = fs.existsSync(refDir) ? fs.readdirSync(refDir).filter((f) => /\.(png|jpe?g|svg)$/i.test(f)).sort() : [];
     const namenFile = path.join(refDir, 'namen.json');
@@ -559,6 +560,7 @@ async function main() {
     const pageRefs = refs.slice(page * cells, (page + 1) * cells);
     const s = pres.addSlide({ masterName: layout });
     T(s, pages > 1 ? `${titel} (${page + 1}/${pages})` : titel);
+    P(s, 'sub', unterzeile);
     for (let i = 0; i < cells; i++) {
       const [x, y, w, h] = G.logoGrid(grid, Math.floor(i / grid.cols), i % grid.cols);
       if (pageRefs[i]) {
