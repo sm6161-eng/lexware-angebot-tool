@@ -136,7 +136,7 @@ const G = {
 // Referenz-Raster: 4 x 3 breite Felder (Unternehmen) und 4 x 2 hohe Felder (Vereinswappen)
 const REF_GRID = {
   breit: { cols: 4, rows: 3, cellW: 2.1, cellH: 1.05, x0: 0.62, y0: 1.47, dx: 2.3, dy: 1.2, w: 1.86, h: 0.81 },
-  hoch: { cols: 4, rows: 2, cellW: 2.1, cellH: 1.6, x0: 0.62, y0: 1.47, dx: 2.3, dy: 1.75, w: 1.86, h: 1.36 },
+  hoch: { cols: 4, rows: 2, cellW: 2.1, cellH: 1.6, x0: 0.62, y0: 1.47, dx: 2.3, dy: 1.75, w: 1.86, h: 1.05, caption: { dy: 1.17, h: 0.3 } },
 };
 const pic = (name, [x, y, w, h], prompt = 'Foto einfügen') => ph(name, 'pic', prompt, { x, y, w, h, fontSize: FS.sub, align: 'center', valign: 'middle', ...MUTED_ON_LIGHT });
 const txt = (text, o) => ({ text: { text, options: { fontFace: FONT, margin: 0, ...o } } });
@@ -351,7 +351,12 @@ async function main() {
       background: { path: bg },
       objects: [
         logo('dark', 8.55, 0.4, 'small'), title(),
-        ...Array.from({ length: grid.rows }, (_, r) => r).flatMap((r) => Array.from({ length: grid.cols }, (_, c) => c).map((c) => pic(`logo${r * grid.cols + c + 1}`, G.logoGrid(grid, r, c), 'Logo einfügen'))),
+        ...Array.from({ length: grid.rows }, (_, r) => r).flatMap((r) => Array.from({ length: grid.cols }, (_, c) => c).flatMap((c) => {
+          const n = r * grid.cols + c + 1, [x, y, w] = G.logoGrid(grid, r, c);
+          const items = [pic(`logo${n}`, G.logoGrid(grid, r, c), 'Logo einfügen')];
+          if (grid.caption) items.push(ph(`name${n}`, 'body', 'Vereinsname', { x, y: y + grid.caption.dy, w, h: grid.caption.h, fontSize: 11, bold: true, color: C.dark, align: 'center', valign: 'middle' }));
+          return items;
+        })),
         footer(),
       ],
       slideNumber,
@@ -545,6 +550,9 @@ async function main() {
   for (const [group, titel, layout, grid] of refGroups) {
     const refDir = path.join(refRoot, group);
     const refs = fs.existsSync(refDir) ? fs.readdirSync(refDir).filter((f) => /\.(png|jpe?g|svg)$/i.test(f)).sort() : [];
+    const namenFile = path.join(refDir, 'namen.json');
+    const namen = fs.existsSync(namenFile) ? JSON.parse(fs.readFileSync(namenFile, 'utf8')) : {};
+    const nameOf = (f) => namen[f] || f.replace(/^\d+-/, '').replace(/\.[^.]+$/, '').replace(/-/g, ' ');
     const s = pres.addSlide({ masterName: layout });
     T(s, titel);
     const cells = grid.cols * grid.rows;
@@ -565,6 +573,7 @@ async function main() {
         // pptxgenjs setzt bei Platzhalterbildern immer die Platzhalterposition; die zentrierte Position wird im Paket nachgetragen
         const phObj = s._slideLayout._slideObjects.find((o) => o.options && o.options.placeholder === `logo${i + 1}`);
         PIC_FIX.push({ slideNum: s._slideNum, idx: phObj.options._placeholderIdx, x: lx, y: ly });
+        if (grid.caption) P(s, `name${i + 1}`, nameOf(refs[i]));
       } else {
         await IMG(s, `logo${i + 1}`, 'logo', [x, y, w, h]);
       }
