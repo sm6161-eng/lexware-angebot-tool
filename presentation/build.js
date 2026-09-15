@@ -623,7 +623,7 @@ async function main() {
       { text: 'Polo-Shirts und Zip-Sweatshirts in Weiß, Logo auf Brust und Ärmel', options: { bullet: true, fontSize: FS.sub, breakLine: true } },
       { text: 'T-Shirts in Weiß und Rot mit Rückenmotiv', options: { bullet: true, fontSize: FS.sub, breakLine: true } },
       { text: 'Einfarbiger Druck, waschbeständig für den Baustellenalltag', options: { bullet: true, fontSize: FS.sub, breakLine: true } },
-      { text: 'Nachbestellung jederzeit in gleicher Qualität', options: { bullet: true, fontSize: FS.sub } },
+      { text: 'Artikel sind im System hinterlegt, Nachbestellung jederzeit möglich', options: { bullet: true, fontSize: FS.sub } },
     ], { placeholder: 'body', isTextBox: true, paraSpaceAfter: 4, color: C.dark });
     await IMG(s, 'hero', 'foto', G.kunde.hero, 'isic-kollektion');
     const teile = [['isic-polo', 'Polo-Shirt'], ['isic-zip', 'Zip-Sweatshirt'], ['isic-shirt', 'T-Shirt, Rückenmotiv']];
