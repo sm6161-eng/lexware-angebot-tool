@@ -1,63 +1,26 @@
 /**
- * Maiershirts-Logo als Vektor (Bergmarke + Wortmarke), nachgebaut nach der
- * Originalvorlage. Erzeugt:
- *   assets/logo.svg         Vektorquelle (schwarz)
- *   assets/logo-dark.png    schwarze Version für helle Hintergründe
- *   assets/logo-light.png   weiße Version für dunkle Hintergründe
+ * Erzeugt aus der Original-Logodatei assets/logo.svg die beiden PNGs,
+ * die build.js verwendet:
+ *   assets/logo-dark.png    Original (schwarz) für helle Hintergründe
+ *   assets/logo-light.png   weiß eingefärbt für dunkle Hintergründe
  *
- * Liegt das Original-Logo als Datei vor, einfach logo-dark.png / logo-light.png
- * überschreiben und `npm run build` ausführen.
+ * Aufruf: npm run logo
  */
 const fs = require('fs');
 const path = require('path');
 const sharp = require('sharp');
 
-const BLACK = '#0F0F0F';
-const WHITE = '#FFFFFF';
+const ASSETS = path.join(__dirname, 'assets');
+const WIDTH = 2000; // Pixelbreite der PNGs (transparenter Hintergrund)
 
-// Ein "Λ" als Polygon: Spitze bei (ax, top), Füße auf y = base, Halbspannweite s,
-// horizontale Schenkelstärke t. Die innere Spitze liegt um t*(Höhe/s) tiefer.
-function peak(ax, top, base, s, t) {
-  const innerTop = top + t * ((base - top) / s);
-  return [
-    [ax - s, base], [ax, top], [ax + s, base],
-    [ax + s - t, base], [ax, innerTop], [ax - s + t, base],
-  ].map((p) => p.join(',')).join(' ');
-}
-// Rechter Schenkel des linken Λ (für die Aussparung am Kreuzungspunkt)
-function rightLeg(ax, top, base, s, t) {
-  const innerTop = top + t * ((base - top) / s);
-  return [[ax, top], [ax + s, base], [ax + s - t, base], [ax, innerTop]].map((p) => p.join(',')).join(' ');
+async function main() {
+  const svg = fs.readFileSync(path.join(ASSETS, 'logo.svg'), 'utf8');
+  const white = svg.replace(/fill:\s*#[0-9a-f]{3,6}/gi, 'fill: #FFFFFF').replace(/fill="#[0-9a-f]{3,6}"/gi, 'fill="#FFFFFF"');
+  if (white === svg) throw new Error('Keine Füllfarbe in logo.svg gefunden – weiße Variante kann nicht erzeugt werden.');
+  const opts = { density: 600 };
+  await sharp(Buffer.from(svg), opts).resize({ width: WIDTH }).png().toFile(path.join(ASSETS, 'logo-dark.png'));
+  await sharp(Buffer.from(white), opts).resize({ width: WIDTH }).png().toFile(path.join(ASSETS, 'logo-light.png'));
+  console.log('geschrieben: assets/logo-dark.png, assets/logo-light.png');
 }
 
-function logoSvg(color) {
-  const top = 6, base = 208, s = 98, t = 36;
-  const L = peak(246, top, base, s, t);
-  const R = peak(346, top, base, s, t);
-  const leg = rightLeg(246, top, base, s, t);
-  return `<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="600" height="330" viewBox="0 0 600 330">
-  <defs>
-    <mask id="cut">
-      <rect width="600" height="330" fill="white"/>
-      <polygon points="${leg}" fill="black" stroke="black" stroke-width="14" stroke-linejoin="round"/>
-    </mask>
-  </defs>
-  <polygon points="${R}" fill="${color}" mask="url(#cut)"/>
-  <polygon points="${L}" fill="${color}"/>
-  <text x="300" y="312" text-anchor="middle" font-family="Montserrat, Arial, sans-serif"
-        font-weight="700" font-size="76" letter-spacing="3" fill="${color}">MAIERSHIRTS</text>
-</svg>`;
-}
-
-async function write(name, color) {
-  const out = path.join(__dirname, 'assets', name);
-  await sharp(Buffer.from(logoSvg(color)), { density: 288 }).png().toFile(out);
-  console.log('geschrieben:', out);
-}
-
-(async () => {
-  fs.writeFileSync(path.join(__dirname, 'assets', 'logo.svg'), logoSvg(BLACK));
-  await write('logo-dark.png', BLACK);
-  await write('logo-light.png', WHITE);
-})();
+main().catch((e) => { console.error(e); process.exit(1); });
