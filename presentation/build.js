@@ -131,6 +131,7 @@ const G = {
   logo: (r, c) => [0.62 + c * 2.3, 1.47 + r * 1.2, 1.86, 0.81],
   logoGrid: (g, r, c) => [g.x0 + c * g.dx, g.y0 + r * g.dy, g.w, g.h],
   portrait: [0.6, 3.45, 1.05, 1.05],
+  projekt: [[0.5, 1.35, 4.4, 3.5], [5.1, 1.35, 2.15, 1.65], [7.45, 1.35, 2.05, 1.65], [5.1, 3.2, 4.4, 1.65]],
   qr: [6.45, 3.5, 1.0, 1.0],
 };
 // Referenz-Raster: 4 x 3 breite Felder (Unternehmen) und 4 x 2 hohe Felder (Vereinswappen)
@@ -311,6 +312,23 @@ async function main() {
     slideNumber,
   });
 
+  // Projekte aus der Praxis (1 großes + 3 kleine Fotos, Bildunterschrift im Foto)
+  pres.defineSlideMaster({
+    title: 'MS_PROJEKTE',
+    background: { color: C.white },
+    objects: [
+      logo('dark', 8.55, 0.4, 'small'), title(),
+      ph('sub', 'body', 'Was wir zuletzt umgesetzt haben', { x: 0.5, y: 1.0, w: 7.8, h: 0.3, fontSize: FS.sub, align: 'left', valign: 'middle', ...MUTED_ON_LIGHT }),
+      ...G.projekt.flatMap(([x, y, w, h], i) => [
+        pic(`projekt${i + 1}`, [x, y, w, h]),
+        ph(`projekt${i + 1}_name`, 'body', 'Kunde', { x: x + 0.15, y: y + h - 0.62, w: w - 0.3, h: 0.32, fontSize: i === 0 ? FS.h : 13, bold: true, color: C.white, align: 'left', valign: 'bottom' }),
+        ph(`projekt${i + 1}_text`, 'body', 'Was wir gemacht haben', { x: x + 0.15, y: y + h - 0.32, w: w - 0.3, h: 0.25, fontSize: FS.label, color: C.white, align: 'left', valign: 'top' }),
+      ]),
+      footer(),
+    ],
+    slideNumber,
+  });
+
   // Textil-Auswahl (3 Rohlinge)
   pres.defineSlideMaster({
     title: 'MS_TEXTIL',
@@ -417,12 +435,19 @@ async function main() {
   const P = (s, name, text, o = {}) => s.addText(text, { placeholder: name, isTextBox: true, ...o });
   // Bild in einen Bildplatzhalter: echtes Foto aus assets/fotos/<foto>.jpg (auf das Feld zugeschnitten), sonst Platzhalterbild
   const FOTOS = path.join(ASSETS, 'fotos');
-  const IMG = async (s, name, kind, [x, y, w, h], foto) => {
+  const IMG = async (s, name, kind, [x, y, w, h], foto, { gradient = false } = {}) => {
     const real = foto && ['jpg', 'jpeg', 'png'].map((e) => path.join(FOTOS, `${foto}.${e}`)).find((f) => fs.existsSync(f));
     let file;
     if (real) {
       file = path.join(TMP, `foto-${foto}-${Math.round(w * 100)}x${Math.round(h * 100)}.jpg`);
-      await sharp(real).resize(Math.round(w * 300), Math.round(h * 300), { fit: 'cover', position: 'attention' }).jpeg({ quality: 88 }).toFile(file);
+      const pw = Math.round(w * 300), phh = Math.round(h * 300);
+      let img = sharp(real).resize(pw, phh, { fit: 'cover', position: 'centre' });
+      if (gradient) { // dunkler Verlauf unten, damit weiße Bildunterschriften lesbar bleiben
+        const gh = Math.round(phh * 0.55);
+        const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${pw}" height="${phh}"><defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0F0F0F" stop-opacity="0"/><stop offset="1" stop-color="#0F0F0F" stop-opacity="0.85"/></linearGradient></defs><rect x="0" y="${phh - gh}" width="${pw}" height="${gh}" fill="url(#g)"/></svg>`;
+        img = sharp(await img.jpeg({ quality: 95 }).toBuffer()).composite([{ input: Buffer.from(svg), top: 0, left: 0 }]);
+      }
+      await img.jpeg({ quality: 88 }).toFile(file);
     } else {
       file = await placeholderImage(kind, w, h);
     }
@@ -547,6 +572,24 @@ async function main() {
       { text: 'Foto und viele Farben → Digitaldruck · Exakte Farbe in Serie → Siebdrucktransfer · Industriewäsche → Spezialtransfer · Edler Logo-Look → Stickerei. Auf Anfrage: Sublimation und Siebdruck direkt.' },
     ], { placeholder: 'fazit', isTextBox: true });
     s.addNotes('Layout MS_VERFAHREN: vier Verfahren mit Einsatzgebiet und drei Kennwerten, darunter die Entscheidungshilfe. Inhalte aus dem Veredelungs-Leitfaden (maiershirts-veredelung-leitfaden/leitfaden.html). Handmuster-Karte „Fühl den Unterschied“ zum Termin mitnehmen.');
+  }
+
+  // 8b Projekte aus der Praxis
+  {
+    const s = pres.addSlide({ masterName: 'MS_PROJEKTE' });
+    T(s, 'Projekte aus der Praxis');
+    P(s, 'sub', 'Vier Beispiele aus der Werkstatt, vom Vereinsjubiläum bis zum Trainingslager.');
+    const projekte = [
+      ['Sportfreunde Dußlingen', 'Crew-Shirts zum 125-jährigen Jubiläum'],
+      ['ROX Herrenberg', 'Kletterer-Motiv im Vollfarbdruck'],
+      ['Biwakschachtel', 'Kepi Climbing Team'],
+      ['TV Mühlacker', 'Trainingslager-Shirts mit Vereinslogo'],
+    ];
+    for (let i = 0; i < 4; i++) {
+      await IMG(s, `projekt${i + 1}`, 'foto', G.projekt[i], `projekt-${i + 1}`, { gradient: true });
+      P(s, `projekt${i + 1}_name`, projekte[i][0]); P(s, `projekt${i + 1}_text`, projekte[i][1]);
+    }
+    s.addNotes('Layout MS_PROJEKTE: ein großes und drei kleine Fotos mit Kunde und Kurzbeschreibung im Bild. Fotos aus assets/fotos/projekt-1 bis projekt-4; der Build legt einen dunklen Verlauf unter die Bildunterschrift.');
   }
 
   // 8 Textil-Auswahl
