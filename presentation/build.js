@@ -321,8 +321,8 @@ async function main() {
       ph('sub', 'body', 'Was wir zuletzt umgesetzt haben', { x: 0.5, y: 1.0, w: 7.8, h: 0.3, fontSize: FS.sub, align: 'left', valign: 'middle', ...MUTED_ON_LIGHT }),
       ...G.projekt.flatMap(([x, y, w, h], i) => [
         pic(`projekt${i + 1}`, [x, y, w, h]),
-        ph(`projekt${i + 1}_name`, 'body', 'Kunde', { x: x + 0.15, y: y + h - 0.62, w: w - 0.3, h: 0.32, fontSize: i === 0 ? FS.h : 13, bold: true, color: C.white, align: 'left', valign: 'bottom' }),
-        ph(`projekt${i + 1}_text`, 'body', 'Was wir gemacht haben', { x: x + 0.15, y: y + h - 0.32, w: w - 0.3, h: 0.25, fontSize: FS.label, color: C.white, align: 'left', valign: 'top' }),
+        ph(`projekt${i + 1}_name`, 'body', 'Kunde', { x: x + 0.15, y: y + h - (i === 0 ? 0.62 : 0.52), w: w - 0.3, h: i === 0 ? 0.32 : 0.28, fontSize: i === 0 ? FS.h : 13, bold: true, color: C.white, align: 'left', valign: 'bottom' }),
+        ph(`projekt${i + 1}_text`, 'body', 'Was wir gemacht haben', { x: x + 0.15, y: y + h - (i === 0 ? 0.32 : 0.26), w: w - 0.3, h: i === 0 ? 0.25 : 0.22, fontSize: FS.label, color: C.white, align: 'left', valign: 'top' }),
       ]),
       footer(),
     ],
