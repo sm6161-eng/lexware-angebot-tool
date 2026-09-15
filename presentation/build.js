@@ -574,22 +574,22 @@ async function main() {
     s.addNotes('Layout MS_VERFAHREN: vier Verfahren mit Einsatzgebiet und drei Kennwerten, darunter die Entscheidungshilfe. Inhalte aus dem Veredelungs-Leitfaden (maiershirts-veredelung-leitfaden/leitfaden.html). Handmuster-Karte „Fühl den Unterschied“ zum Termin mitnehmen.');
   }
 
-  // 8b Projekte aus der Praxis
+  // 8b Projekte aus der Praxis: Einträge aus assets/fotos/projekte.json, vier pro Folie
   {
-    const s = pres.addSlide({ masterName: 'MS_PROJEKTE' });
-    T(s, 'Projekte aus der Praxis');
-    P(s, 'sub', 'Vier Beispiele aus der Werkstatt, vom Vereinsjubiläum bis zum Trainingslager.');
-    const projekte = [
-      ['Sportfreunde Dußlingen', 'Crew-Shirts zum 125-jährigen Jubiläum'],
-      ['ROX Herrenberg', 'Kletterer-Motiv im Vollfarbdruck'],
-      ['Biwakschachtel', 'Kepi Climbing Team'],
-      ['TV Mühlacker', 'Trainingslager-Shirts mit Vereinslogo'],
-    ];
-    for (let i = 0; i < 4; i++) {
-      await IMG(s, `projekt${i + 1}`, 'foto', G.projekt[i], `projekt-${i + 1}`, { gradient: true });
-      P(s, `projekt${i + 1}_name`, projekte[i][0]); P(s, `projekt${i + 1}_text`, projekte[i][1]);
+    const listFile = path.join(FOTOS, 'projekte.json');
+    const projekte = fs.existsSync(listFile) ? JSON.parse(fs.readFileSync(listFile, 'utf8')) : [];
+    const pages = Math.max(1, Math.ceil(projekte.length / 4));
+    for (let page = 0; page < pages; page++) {
+      const s = pres.addSlide({ masterName: 'MS_PROJEKTE' });
+      T(s, pages > 1 ? `Projekte aus der Praxis (${page + 1}/${pages})` : 'Projekte aus der Praxis');
+      P(s, 'sub', 'Beispiele aus der Werkstatt, vom Vereinsjubiläum bis zur Workwear.');
+      for (let i = 0; i < 4; i++) {
+        const pr = projekte[page * 4 + i];
+        await IMG(s, `projekt${i + 1}`, 'foto', G.projekt[i], pr && pr.foto, { gradient: !!pr });
+        if (pr) { P(s, `projekt${i + 1}_name`, pr.kunde); P(s, `projekt${i + 1}_text`, pr.text); }
+      }
+      s.addNotes(`Layout MS_PROJEKTE: ein großes und drei kleine Fotos mit Kunde und Kurztext im Bild (Folie ${page + 1} von ${pages}). Einträge in assets/fotos/projekte.json, Fotos daneben; der Build legt einen dunklen Verlauf unter die Bildunterschrift.`);
     }
-    s.addNotes('Layout MS_PROJEKTE: ein großes und drei kleine Fotos mit Kunde und Kurzbeschreibung im Bild. Fotos aus assets/fotos/projekt-1 bis projekt-4; der Build legt einen dunklen Verlauf unter die Bildunterschrift.');
   }
 
   // 8 Textil-Auswahl

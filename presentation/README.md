@@ -9,7 +9,7 @@ Warm Sand `#E8DFD0`, Sand Dark `#D9D2C5`, Weiß. Schrift: Inter.
 | Datei | Zweck |
 |---|---|
 | `dist/Maiershirts_Master.potx` | **Die Vorlage.** Doppelklick öffnet eine neue Präsentation mit allen Layouts und Platzhaltern. |
-| `dist/Maiershirts_Master.pptx` | Beispieldeck: jedes Layout einmal mit Musterinhalt (19 Folien). Zum Abschauen und Kopieren. |
+| `dist/Maiershirts_Master.pptx` | Beispieldeck: jedes Layout einmal mit Musterinhalt (20 Folien). Zum Abschauen und Kopieren. |
 | `assets/logo.svg` | Original-Logo (Vektor) |
 | `assets/logo-dark.png`, `assets/logo-light.png` | Logo schwarz (helle Folien) und weiß (dunkle Folien), erzeugt aus `logo.svg` |
 | `assets/fotos/` | Echte Fotos für das Beispieldeck: `vollbild`, `bild`, `textil-1` bis `textil-3`, `projekt-1` bis `projekt-4` (jpg/png). Fehlt eine Datei, setzt der Build ein Platzhalterbild. |
@@ -20,7 +20,7 @@ Warm Sand `#E8DFD0`, Sand Dark `#D9D2C5`, Weiß. Schrift: Inter.
 ## So wird gearbeitet
 
 1. `Maiershirts_Master.potx` doppelklicken. PowerPoint öffnet eine neue
-   Präsentation mit den Maiershirts-Layouts und den 19 Musterfolien.
+   Präsentation mit den Maiershirts-Layouts und den 20 Musterfolien.
    Nicht benötigte Musterfolien löschen, die Vorlage selbst bleibt unverändert.
 2. Folien über **Start → Neue Folie** anlegen und das passende Layout wählen.
    Jede Folie hat Platzhalter mit Hinweistext (z. B. „Foto einfügen“,
