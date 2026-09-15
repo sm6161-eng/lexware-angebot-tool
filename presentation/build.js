@@ -132,6 +132,7 @@ const G = {
   logoGrid: (g, r, c) => [g.x0 + c * g.dx, g.y0 + r * g.dy, g.w, g.h],
   portrait: [0.6, 3.45, 1.05, 1.05],
   projekt: [[0.5, 1.35, 4.4, 3.5], [5.1, 1.35, 2.15, 1.65], [7.45, 1.35, 2.05, 1.65], [5.1, 3.2, 4.4, 1.65]],
+  kunde: { hero: [4.0, 1.35, 5.5, 2.0], klein: [0, 1, 2].map((i) => [4.0 + i * 1.885, 3.5, 1.73, 1.3]) },
   qr: [6.45, 3.5, 1.0, 1.0],
 };
 // Referenz-Raster: 4 x 3 breite Felder (Unternehmen) und 4 x 2 hohe Felder (Vereinswappen)
@@ -323,6 +324,24 @@ async function main() {
         pic(`projekt${i + 1}`, [x, y, w, h]),
         ph(`projekt${i + 1}_name`, 'body', 'Kunde', { x: x + 0.15, y: y + h - (i === 0 ? 0.62 : 0.52), w: w - 0.3, h: i === 0 ? 0.32 : 0.28, fontSize: i === 0 ? FS.h : 13, bold: true, color: C.white, align: 'left', valign: 'bottom' }),
         ph(`projekt${i + 1}_text`, 'body', 'Was wir gemacht haben', { x: x + 0.15, y: y + h - (i === 0 ? 0.32 : 0.26), w: w - 0.3, h: i === 0 ? 0.25 : 0.22, fontSize: FS.label, color: C.white, align: 'left', valign: 'top' }),
+      ]),
+      footer(),
+    ],
+    slideNumber,
+  });
+
+  // Projekt im Detail (ein Kunde: Text links, Kollektionsfoto und drei Einzelteile rechts)
+  pres.defineSlideMaster({
+    title: 'MS_PROJEKT_KUNDE',
+    background: { color: C.white },
+    objects: [
+      logo('dark', 8.55, 0.4, 'small'), title(),
+      ph('sub', 'body', 'Branche · Ort', { x: 0.5, y: 1.0, w: 7.8, h: 0.3, fontSize: FS.sub, align: 'left', valign: 'middle', ...MUTED_ON_LIGHT }),
+      bodyPh(0.5, 1.35, 3.2, 3.6),
+      pic('hero', G.kunde.hero),
+      ...G.kunde.klein.flatMap(([x, y, w, h], i) => [
+        pic(`teil${i + 1}`, [x, y, w, h]),
+        ph(`teil${i + 1}_name`, 'body', 'Teil', { x, y: y + h + 0.03, w, h: 0.25, fontSize: FS.label, bold: true, color: C.dark, align: 'left', valign: 'top' }),
       ]),
       footer(),
     ],
@@ -590,6 +609,26 @@ async function main() {
       }
       s.addNotes(`Layout MS_PROJEKTE: ein großes und drei kleine Fotos mit Kunde und Kurztext im Bild (Folie ${page + 1} von ${pages}). Einträge in assets/fotos/projekte.json, Fotos daneben; der Build legt einen dunklen Verlauf unter die Bildunterschrift.`);
     }
+  }
+
+  // 8c Projekt im Detail: Emin Isic Montagebau
+  {
+    const s = pres.addSlide({ masterName: 'MS_PROJEKT_KUNDE' });
+    T(s, 'Emin Isic Montagebau');
+    P(s, 'sub', 'Montagebetrieb, Tübingen · Arbeitskleidung für das ganze Team');
+    s.addText([
+      { text: 'Aufgabe', options: { bold: true, fontSize: FS.h, breakLine: true } },
+      { text: 'Einheitliche Arbeitskleidung vom Polo bis zum Sweatshirt, mit Firmenlogo auf der Brust und Handwerker-Motiv auf dem Rücken.', options: { fontSize: FS.sub, breakLine: true, paraSpaceAfter: 12 } },
+      { text: 'Umsetzung', options: { bold: true, fontSize: FS.h, breakLine: true } },
+      { text: 'Polo-Shirts und Zip-Sweatshirts in Weiß, Logo auf Brust und Ärmel', options: { bullet: true, fontSize: FS.sub, breakLine: true } },
+      { text: 'T-Shirts in Weiß und Rot mit Rückenmotiv', options: { bullet: true, fontSize: FS.sub, breakLine: true } },
+      { text: 'Einfarbiger Druck, waschbeständig für den Baustellenalltag', options: { bullet: true, fontSize: FS.sub, breakLine: true } },
+      { text: 'Nachbestellung jederzeit in gleicher Qualität', options: { bullet: true, fontSize: FS.sub } },
+    ], { placeholder: 'body', isTextBox: true, paraSpaceAfter: 4, color: C.dark });
+    await IMG(s, 'hero', 'foto', G.kunde.hero, 'isic-kollektion');
+    const teile = [['isic-polo', 'Polo-Shirt'], ['isic-zip', 'Zip-Sweatshirt'], ['isic-shirt', 'T-Shirt, Rückenmotiv']];
+    for (let i = 0; i < 3; i++) { await IMG(s, `teil${i + 1}`, 'foto', G.kunde.klein[i], teile[i][0]); P(s, `teil${i + 1}_name`, teile[i][1]); }
+    s.addNotes('Layout MS_PROJEKT_KUNDE: ein Kunde im Detail. Text links (Aufgabe, Umsetzung), Kollektionsfoto oben rechts, drei Einzelteile darunter mit Beschriftung. Fotos aus assets/fotos/isic-*.jpg.');
   }
 
   // 8 Textil-Auswahl
