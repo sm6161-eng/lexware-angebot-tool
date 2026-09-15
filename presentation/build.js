@@ -626,7 +626,7 @@ async function main() {
       { text: 'Artikel sind im System hinterlegt, Nachbestellung jederzeit möglich', options: { bullet: true, fontSize: FS.sub } },
     ], { placeholder: 'body', isTextBox: true, paraSpaceAfter: 4, color: C.dark });
     await IMG(s, 'hero', 'foto', G.kunde.hero, 'isic-kollektion');
-    const teile = [['isic-polo', 'Polo-Shirt'], ['isic-zip', 'Zip-Sweatshirt'], ['isic-shirt', 'T-Shirt, Rückenmotiv']];
+    const teile = [['isic-polo', 'Polo, Brust und Ärmel'], ['isic-zip', 'Zip-Sweatshirt, Ärmel'], ['isic-shirt', 'T-Shirt, Rückenmotiv']];
     for (let i = 0; i < 3; i++) { await IMG(s, `teil${i + 1}`, 'foto', G.kunde.klein[i], teile[i][0]); P(s, `teil${i + 1}_name`, teile[i][1]); }
     s.addNotes('Layout MS_PROJEKT_KUNDE: ein Kunde im Detail. Text links (Aufgabe, Umsetzung), Kollektionsfoto oben rechts, drei Einzelteile darunter mit Beschriftung. Fotos aus assets/fotos/isic-*.jpg.');
   }
