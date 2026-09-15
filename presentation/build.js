@@ -526,8 +526,19 @@ async function main() {
   {
     const s = pres.addSlide({ masterName: 'MS_REFERENZEN' });
     T(s, 'Vereine und Unternehmen, die uns vertrauen');
-    for (let i = 0; i < 12; i++) await IMG(s, `logo${i + 1}`, 'logo', G.logo(Math.floor(i / 4), i % 4));
-    s.addNotes('Layout MS_REFERENZEN: zwölf Logo-Felder. Logo per Klick auf das Platzhalterbild einsetzen; bei Beschnitt: Bildformat → Zuschneiden → Anpassen.');
+    // Echte Kundenlogos aus assets/referenzen/ (alphabetisch, z. B. 01-firma.png), Rest bleibt Platzhalter
+    const refDir = path.join(ASSETS, 'referenzen');
+    const refs = fs.existsSync(refDir) ? fs.readdirSync(refDir).filter((f) => /\.(png|jpe?g|svg)$/i.test(f)).sort() : [];
+    for (let i = 0; i < 12; i++) {
+      const [x, y, w, h] = G.logo(Math.floor(i / 4), i % 4);
+      if (refs[i]) {
+        const pad = 0.14; // Luft zum Kartenrand, Logo proportional eingepasst
+        s.addImage({ placeholder: `logo${i + 1}`, path: path.join(refDir, refs[i]), x: x + pad, y: y + pad, w: w - 2 * pad, h: h - 2 * pad, sizing: { type: 'contain', w: w - 2 * pad, h: h - 2 * pad } });
+      } else {
+        await IMG(s, `logo${i + 1}`, 'logo', [x, y, w, h]);
+      }
+    }
+    s.addNotes(`Layout MS_REFERENZEN: zwölf Logo-Felder. ${refs.length} Logo(s) aus assets/referenzen eingesetzt. Logo per Klick auf das Platzhalterbild einsetzen; bei Beschnitt: Bildformat → Zuschneiden → Anpassen.`);
   }
 
   // 12 Bild links, Text rechts
