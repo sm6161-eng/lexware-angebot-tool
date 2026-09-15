@@ -553,18 +553,20 @@ async function main() {
     const namenFile = path.join(refDir, 'namen.json');
     const namen = fs.existsSync(namenFile) ? JSON.parse(fs.readFileSync(namenFile, 'utf8')) : {};
     const nameOf = (f) => namen[f] || f.replace(/^\d+-/, '').replace(/\.[^.]+$/, '').replace(/-/g, ' ');
-    const s = pres.addSlide({ masterName: layout });
-    T(s, titel);
     const cells = grid.cols * grid.rows;
-    if (refs.length > cells) console.warn(`Hinweis: ${refs.length} Logos in ${group}, nur ${cells} Felder – Rest wird nicht gezeigt.`);
+    const pages = Math.max(1, Math.ceil(refs.length / cells)); // mehr Logos als Felder: automatisch Fortsetzungsfolie
+    for (let page = 0; page < pages; page++) {
+    const pageRefs = refs.slice(page * cells, (page + 1) * cells);
+    const s = pres.addSlide({ masterName: layout });
+    T(s, pages > 1 ? `${titel} (${page + 1}/${pages})` : titel);
     for (let i = 0; i < cells; i++) {
       const [x, y, w, h] = G.logoGrid(grid, Math.floor(i / grid.cols), i % grid.cols);
-      if (refs[i]) {
+      if (pageRefs[i]) {
         // Luft zum Kartenrand; Logo proportional eingepasst und zentriert (pptxgenjs kennt die Bildmaße nicht)
         const pad = 0.16, boxW = w - 2 * pad, boxH = h - 2 * pad;
         // Weiße bzw. transparente Ränder der Datei abschneiden, damit alle Logos ähnlich groß wirken
-        const file = path.join(TMP, `ref-${group}-${i}.png`);
-        await sharp(path.join(refDir, refs[i])).trim({ threshold: 25 }).png().toFile(file);
+        const file = path.join(TMP, `ref-${group}-${page}-${i}.png`);
+        await sharp(path.join(refDir, pageRefs[i])).trim({ threshold: 25 }).png().toFile(file);
         const meta = await sharp(file).metadata();
         const scale = Math.min(boxW / meta.width, boxH / meta.height);
         const lw = meta.width * scale, lh = meta.height * scale;
@@ -573,12 +575,13 @@ async function main() {
         // pptxgenjs setzt bei Platzhalterbildern immer die Platzhalterposition; die zentrierte Position wird im Paket nachgetragen
         const phObj = s._slideLayout._slideObjects.find((o) => o.options && o.options.placeholder === `logo${i + 1}`);
         PIC_FIX.push({ slideNum: s._slideNum, idx: phObj.options._placeholderIdx, x: lx, y: ly });
-        if (grid.caption) P(s, `name${i + 1}`, nameOf(refs[i]));
+        if (grid.caption) P(s, `name${i + 1}`, nameOf(pageRefs[i]));
       } else {
         await IMG(s, `logo${i + 1}`, 'logo', [x, y, w, h]);
       }
     }
-    s.addNotes(`Layout ${layout}: ${cells} Logo-Felder. ${refs.length} Logo(s) aus assets/referenzen/${group} eingesetzt. Logo per Klick auf das Platzhalterbild einsetzen; bei Beschnitt: Bildformat → Zuschneiden → Anpassen.`);
+    s.addNotes(`Layout ${layout}: ${cells} Logo-Felder. ${pageRefs.length} Logo(s) aus assets/referenzen/${group} eingesetzt (Folie ${page + 1} von ${pages}). Logo per Klick auf das Platzhalterbild einsetzen; bei Beschnitt: Bildformat → Zuschneiden → Anpassen.`);
+    }
   }
 
   // 13 Bild links, Text rechts
