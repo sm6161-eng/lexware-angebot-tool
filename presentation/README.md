@@ -12,6 +12,8 @@ Warm Sand `#E8DFD0`, Sand Dark `#D9D2C5`, Weiß. Schrift: Inter.
 | `dist/Maiershirts_Master.pptx` | Beispieldeck: jedes Layout einmal mit Musterinhalt (15 Folien). Zum Abschauen und Kopieren. |
 | `assets/logo.svg` | Original-Logo (Vektor) |
 | `assets/logo-dark.png`, `assets/logo-light.png` | Logo schwarz (helle Folien) und weiß (dunkle Folien), erzeugt aus `logo.svg` |
+| `assets/fotos/` | Echte Fotos für das Beispieldeck: `vollbild`, `bild`, `textil-1` bis `textil-3` (jpg/png). Fehlt eine Datei, setzt der Build ein Platzhalterbild. |
+| `assets/referenzen/unternehmen/`, `.../vereine/` | Kundenlogos für die Referenzfolien, nummeriert (`01-name.png`). Vereine: Namen in `namen.json`. |
 | `build.js` | Erzeugt POTX und PPTX (`npm run build`) |
 | `make-logo.js` | Erzeugt die beiden Logo-PNGs aus `logo.svg` (`npm run logo`) |
 

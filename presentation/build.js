@@ -415,7 +415,19 @@ async function main() {
   // ======================================================================
   const T = (s, text) => s.addText(text, { placeholder: 'title', isTextBox: true });
   const P = (s, name, text, o = {}) => s.addText(text, { placeholder: name, isTextBox: true, ...o });
-  const IMG = async (s, name, kind, [x, y, w, h]) => s.addImage({ placeholder: name, path: await placeholderImage(kind, w, h), x, y, w, h });
+  // Bild in einen Bildplatzhalter: echtes Foto aus assets/fotos/<foto>.jpg (auf das Feld zugeschnitten), sonst Platzhalterbild
+  const FOTOS = path.join(ASSETS, 'fotos');
+  const IMG = async (s, name, kind, [x, y, w, h], foto) => {
+    const real = foto && ['jpg', 'jpeg', 'png'].map((e) => path.join(FOTOS, `${foto}.${e}`)).find((f) => fs.existsSync(f));
+    let file;
+    if (real) {
+      file = path.join(TMP, `foto-${foto}-${Math.round(w * 100)}x${Math.round(h * 100)}.jpg`);
+      await sharp(real).resize(Math.round(w * 300), Math.round(h * 300), { fit: 'cover', position: 'attention' }).jpeg({ quality: 88 }).toFile(file);
+    } else {
+      file = await placeholderImage(kind, w, h);
+    }
+    s.addImage({ placeholder: name, path: file, x, y, w, h });
+  };
 
   // 1 Titel
   {
@@ -488,9 +500,9 @@ async function main() {
   // 5 Vollbild-Foto
   {
     const s = pres.addSlide({ masterName: 'MS_BILD_VOLL' });
-    await IMG(s, 'foto', 'foto', G.voll);
+    await IMG(s, 'foto', 'foto', G.voll, 'vollbild');
     T(s, 'Ihr Motiv auf dem Textil');
-    P(s, 'sub', 'Stickerei auf Polo-Shirt, Beispiel aus der Produktion');
+    P(s, 'sub', 'Maiershirts-Logo auf Polo-Shirt, Beispiel aus der Produktion');
     s.addNotes('Layout MS_BILD_VOLL: Foto über die volle Breite, darunter Bildunterschrift. Bild per Klick auf das Platzhalterbild ersetzen.');
   }
 
@@ -542,12 +554,12 @@ async function main() {
     const s = pres.addSlide({ masterName: 'MS_TEXTIL' });
     T(s, 'Textilien für Ihr Projekt');
     const textil = [
-      ['T-Shirt Bio-Baumwolle', 'B&C Inspire T · 140 g/m²\n12 Farben · XS bis 3XL', 'ab 9,90 €'],
       ['Polo-Shirt Piqué', 'Kariban Piqué · 220 g/m²\n8 Farben · S bis 4XL', 'ab 17,50 €'],
+      ['Cap', 'Beechfield Original · 6 Panel\n12 Farben · Einheitsgröße', 'ab 12,90 €'],
       ['Hoodie Bio', 'Stanley/Stella Cruiser · 350 g/m²\n10 Farben · XS bis 3XL', 'ab 29,90 €'],
     ];
     for (let i = 0; i < 3; i++) {
-      await IMG(s, `textil${i + 1}_foto`, 'foto', G.textil(i));
+      await IMG(s, `textil${i + 1}_foto`, 'foto', G.textil(i), `textil-${i + 1}`);
       P(s, `textil${i + 1}`, textil[i][0]); P(s, `textil${i + 1}_details`, textil[i][1]); P(s, `textil${i + 1}_preis`, textil[i][2]);
     }
     s.addNotes('Layout MS_TEXTIL: drei Rohlinge mit Foto, Name, Details und Preis ab. Beispielwerte.');
@@ -638,7 +650,7 @@ async function main() {
   {
     const s = pres.addSlide({ masterName: 'MS_BILD' });
     T(s, 'Stickerei im Detail');
-    await IMG(s, 'foto', 'foto', G.bild);
+    await IMG(s, 'foto', 'foto', G.bild, 'bild');
     s.addText([
       { text: 'Bis zu 12 Garnfarben pro Motiv', options: { bullet: true, breakLine: true } },
       { text: 'Waschbeständig bis 60 °C', options: { bullet: true, breakLine: true } },
