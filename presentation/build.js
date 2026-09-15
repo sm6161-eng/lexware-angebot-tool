@@ -142,6 +142,9 @@ const bodyPh = (x, y, w, h) => ph('body', 'body', 'Text eingeben', { x, y, w, h,
 
 // Musterinhalte (nur im Beispieldeck, alles Platzhalterwerte)
 const KUNDE = 'SV Musterstadt e. V. · Trikotsatz Saison 2027';
+// Positionskorrekturen für platzhaltergebundene Bilder (siehe Referenzfolie)
+const PIC_FIX = [];
+const EMU = (inch) => Math.round(inch * 914400);
 
 async function main() {
   fs.mkdirSync(DIST, { recursive: true });
@@ -532,8 +535,19 @@ async function main() {
     for (let i = 0; i < 12; i++) {
       const [x, y, w, h] = G.logo(Math.floor(i / 4), i % 4);
       if (refs[i]) {
-        const pad = 0.14; // Luft zum Kartenrand, Logo proportional eingepasst
-        s.addImage({ placeholder: `logo${i + 1}`, path: path.join(refDir, refs[i]), x: x + pad, y: y + pad, w: w - 2 * pad, h: h - 2 * pad, sizing: { type: 'contain', w: w - 2 * pad, h: h - 2 * pad } });
+        // Luft zum Kartenrand; Logo proportional eingepasst und zentriert (pptxgenjs kennt die Bildmaße nicht)
+        const pad = 0.16, boxW = w - 2 * pad, boxH = h - 2 * pad;
+        // Weiße bzw. transparente Ränder der Datei abschneiden, damit alle Logos ähnlich groß wirken
+        const file = path.join(TMP, `ref-${i}.png`);
+        await sharp(path.join(refDir, refs[i])).trim({ threshold: 25 }).png().toFile(file);
+        const meta = await sharp(file).metadata();
+        const scale = Math.min(boxW / meta.width, boxH / meta.height);
+        const lw = meta.width * scale, lh = meta.height * scale;
+        const lx = x + pad + (boxW - lw) / 2, ly = y + pad + (boxH - lh) / 2;
+        s.addImage({ placeholder: `logo${i + 1}`, path: file, x: lx, y: ly, w: lw, h: lh });
+        // pptxgenjs setzt bei Platzhalterbildern immer die Platzhalterposition; die zentrierte Position wird im Paket nachgetragen
+        const phObj = s._slideLayout._slideObjects.find((o) => o.options && o.options.placeholder === `logo${i + 1}`);
+        PIC_FIX.push({ slideNum: s._slideNum, idx: phObj.options._placeholderIdx, x: lx, y: ly });
       } else {
         await IMG(s, `logo${i + 1}`, 'logo', [x, y, w, h]);
       }
@@ -640,6 +654,11 @@ async function main() {
     } else if (/^ppt\/slides\/slide\d+\.xml$/.test(f)) {
       let xml = await zip.file(f).async('string');
       xml = xml.replace(/<p:pic>[\s\S]*?<\/p:nvPicPr>/g, (blk) => blk.replace(untyped, '<p:ph idx="$1" type="pic" $2/>'));
+      const slideNum = Number(f.match(/slide(\d+)\.xml$/)[1]);
+      for (const fix of PIC_FIX.filter((p) => p.slideNum === slideNum)) {
+        xml = xml.replace(/<p:pic>[\s\S]*?<\/p:pic>/g, (blk) =>
+          new RegExp(`<p:ph idx="${fix.idx}"`).test(blk) ? blk.replace(/<a:off x="\d+" y="\d+"\/>/, `<a:off x="${EMU(fix.x)}" y="${EMU(fix.y)}"/>`) : blk);
+      }
       zip.file(f, xml);
     }
   }
