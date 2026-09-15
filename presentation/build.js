@@ -170,6 +170,7 @@ async function main() {
     prozess: await background('prozess', C.white,
       [0, 1, 2, 3].map((i) => circle(0.6 + i * 2.3 + 0.5, 2.25, 0.5, C.beige) + (i < 3 ? arrow(0.6 + i * 2.3 + 1.15, 0.6 + (i + 1) * 2.3 - 0.15, 2.25, C.greenLight) : '')).join('')),
     preisstaffel: await background('preisstaffel', C.beige, [0, 1, 2, 3].map((i) => rr(0.5 + i * 2.3, 1.5, 2.15, 2.2, C.white)).join('')),
+    verfahren: await background('verfahren', C.white, [0, 1, 2, 3].map((i) => rr(0.5 + i * 2.3, 1.35, 2.15, 3.2, C.beige)).join('')),
     angebot: await background('angebot', C.white, rr(0.5, 4.05, 9, 0.8, C.beige)),
     referenzen: await background('referenzen', C.beige,
       [0, 1, 2].flatMap((r) => [0, 1, 2, 3].map((c) => rr(0.5 + c * 2.3, 1.35 + r * 1.2, 2.1, 1.05, C.white, 0.08))).join('')),
@@ -280,6 +281,31 @@ async function main() {
           ph(`schritt${i + 1}_text`, 'body', 'Was in diesem Schritt passiert', { x: x - 0.55, y: 3.4, w: 2.1, h: 1.0, fontSize: FS.sub, align: 'center', valign: 'top', ...MUTED_ON_LIGHT }),
         ];
       }),
+      footer(),
+    ],
+    slideNumber,
+  });
+
+  // Verfahrensvergleich (4 Karten: Digitaldruck, Siebdrucktransfer, Spezialtransfer, Stickerei)
+  pres.defineSlideMaster({
+    title: 'MS_VERFAHREN',
+    background: { path: BG.verfahren },
+    objects: [
+      logo('dark', 8.55, 0.4, 'small'), title(),
+      ph('sub', 'body', 'Welche Technik zu welchem Projekt passt', { x: 0.5, y: 1.0, w: 7.8, h: 0.3, fontSize: FS.sub, align: 'left', valign: 'middle', ...MUTED_ON_LIGHT }),
+      ...[0, 1, 2, 3].flatMap((i) => {
+        const x = 0.68, cx = 0.5 + i * 2.3 + 0.18, w = 1.8;
+        return [
+          txt(`0${i + 1}`, { x: cx, y: 1.5, w, h: 0.25, fontSize: FS.label, bold: true, color: C.greenDark, charSpacing: 1 }),
+          ph(`v${i + 1}_name`, 'body', 'Verfahren', { x: cx, y: 1.75, w, h: 0.35, fontSize: FS.h, bold: true, color: C.dark, align: 'left', valign: 'middle' }),
+          ph(`v${i + 1}_ideal`, 'body', 'Ideal für …', { x: cx, y: 2.12, w, h: 1.2, fontSize: FS.sub, color: C.dark, align: 'left', valign: 'top' }),
+          ...['Wäsche', 'Auflage', 'Farbe'].flatMap((label, k) => [
+            txt(label, { x: cx, y: 3.38 + k * 0.36, w: 0.7, h: 0.34, fontSize: FS.label, ...MUTED_ON_LIGHT, valign: 'middle' }),
+            ph(`v${i + 1}_f${k + 1}`, 'body', '…', { x: cx + 0.7, y: 3.38 + k * 0.36, w: w - 0.7, h: 0.34, fontSize: FS.sub, bold: true, color: C.dark, align: 'left', valign: 'middle' }),
+          ]),
+        ];
+      }),
+      ph('fazit', 'body', 'Kurz entschieden: …', { x: 0.5, y: 4.65, w: 9, h: 0.45, fontSize: FS.sub, color: C.dark, align: 'left', valign: 'top' }),
       footer(),
     ],
     slideNumber,
@@ -487,6 +513,28 @@ async function main() {
       P(s, `schritt${i + 1}`, head); P(s, `schritt${i + 1}_text`, desc);
     });
     s.addNotes('Layout MS_PROZESS: vier nummerierte Schritte mit Überschrift und Kurztext.');
+  }
+
+  // 7b Verfahrensvergleich (Inhalte aus dem Veredelungs-Leitfaden)
+  {
+    const s = pres.addSlide({ masterName: 'MS_VERFAHREN' });
+    T(s, 'Vier Verfahren, ein Anspruch');
+    P(s, 'sub', 'Ehrlich mit Stärken und Grenzen, damit Ihr Motiv da landet, wo es am besten sitzt.');
+    const verfahren = [
+      ['Digitaldruck', 'Fotos, viele Farben, Namen und Nummern. Kleine Mengen, gemischte Größen, fast jedes Material.', ['bis 60 °C', 'ab 1 Stück', 'Vollfarbe']],
+      ['Siebdrucktransfer', 'Serien mit gleichem Motiv: Team-, Vereins- und Workwear. Exaktes Farb-Match, lagerbar für Nachbestellungen.', ['50+ Wäschen', 'ab 25 Stück', 'Sonderfarben']],
+      ['Spezialtransfer', 'Berufskleidung mit Industriewäsche: Handwerk, Pflege, Gastro. Übersteht, wo normale Drucke versagen.', ['bis 90 °C', 'ab 50 Stück', 'Vollton']],
+      ['Stickerei', 'Polos, Caps, Jacken und Workwear. Edler, erhabener Look für Logos. Schrift ab ca. 6 mm Höhe.', ['bis 95 °C', 'ab 1 Stück', 'Garnfarben']],
+    ];
+    verfahren.forEach(([name, ideal, facts], i) => {
+      P(s, `v${i + 1}_name`, name); P(s, `v${i + 1}_ideal`, ideal);
+      facts.forEach((f, k) => P(s, `v${i + 1}_f${k + 1}`, f));
+    });
+    s.addText([
+      { text: 'Kurz entschieden: ', options: { bold: true } },
+      { text: 'Foto und viele Farben → Digitaldruck · Exakte Farbe in Serie → Siebdrucktransfer · Industriewäsche → Spezialtransfer · Edler Logo-Look → Stickerei. Auf Anfrage: Sublimation und Siebdruck direkt.' },
+    ], { placeholder: 'fazit', isTextBox: true });
+    s.addNotes('Layout MS_VERFAHREN: vier Verfahren mit Einsatzgebiet und drei Kennwerten, darunter die Entscheidungshilfe. Inhalte aus dem Veredelungs-Leitfaden (maiershirts-veredelung-leitfaden/leitfaden.html). Handmuster-Karte „Fühl den Unterschied“ zum Termin mitnehmen.');
   }
 
   // 8 Textil-Auswahl
