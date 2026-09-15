@@ -53,7 +53,8 @@ exportieren, dann ist die Schrift eingebettet.
 | `MS_TEXTIL` | Drei Textilien mit Foto, Details und Preis ab | 3 × Foto, Name, Details, Preis |
 | `MS_PREISSTAFFEL` | Vier Stufen Menge gegen Stückpreis | 4 × Stufe, Preis, Zusatz; Hinweis |
 | `MS_ANGEBOT` | Angebotsübersicht mit Konditionen | Titel, Gültig bis, Lieferzeit, Zahlung, Hinweis (Tabelle: Musterfolie kopieren) |
-| `MS_REFERENZEN` | Logo-Raster 4 × 3 | 12 × Logo |
+| `MS_REFERENZEN` | Logo-Raster 4 × 3 für breite Firmenlogos | 12 × Logo |
+| `MS_REFERENZEN_WAPPEN` | Logo-Raster 4 × 2 mit hohen Feldern für Vereinswappen | 8 × Logo |
 | `MS_ABSCHLUSS` | Handlungsaufforderung, Ansprechpartner, nächster Schritt, dunkel | Titel, Text, Porträt, Name, Rolle, Kontakt, nächster Schritt, QR-Code, QR-Text |
 
 Seitenrhythmus: helle und Sand-Folien wechseln sich ab (Kennzahlen,

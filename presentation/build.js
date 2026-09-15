@@ -129,8 +129,14 @@ const G = {
   voll: [0, 0, 10, 4.2],
   textil: (i) => [0.5 + i * 3.05, 1.35, 2.9, 1.9],
   logo: (r, c) => [0.62 + c * 2.3, 1.47 + r * 1.2, 1.86, 0.81],
+  logoGrid: (g, r, c) => [g.x0 + c * g.dx, g.y0 + r * g.dy, g.w, g.h],
   portrait: [0.6, 3.45, 1.05, 1.05],
   qr: [6.45, 3.5, 1.0, 1.0],
+};
+// Referenz-Raster: 4 x 3 breite Felder (Unternehmen) und 4 x 2 hohe Felder (Vereinswappen)
+const REF_GRID = {
+  breit: { cols: 4, rows: 3, cellW: 2.1, cellH: 1.05, x0: 0.62, y0: 1.47, dx: 2.3, dy: 1.2, w: 1.86, h: 0.81 },
+  hoch: { cols: 4, rows: 2, cellW: 2.1, cellH: 1.6, x0: 0.62, y0: 1.47, dx: 2.3, dy: 1.75, w: 1.86, h: 1.36 },
 };
 const pic = (name, [x, y, w, h], prompt = 'Foto einfügen') => ph(name, 'pic', prompt, { x, y, w, h, fontSize: FS.sub, align: 'center', valign: 'middle', ...MUTED_ON_LIGHT });
 const txt = (text, o) => ({ text: { text, options: { fontFace: FONT, margin: 0, ...o } } });
@@ -167,6 +173,8 @@ async function main() {
     angebot: await background('angebot', C.white, rr(0.5, 4.05, 9, 0.8, C.beige)),
     referenzen: await background('referenzen', C.beige,
       [0, 1, 2].flatMap((r) => [0, 1, 2, 3].map((c) => rr(0.5 + c * 2.3, 1.35 + r * 1.2, 2.1, 1.05, C.white, 0.08))).join('')),
+    referenzenHoch: await background('referenzen-hoch', C.beige,
+      [0, 1].flatMap((r) => [0, 1, 2, 3].map((c) => rr(0.5 + c * 2.3, 1.35 + r * 1.75, 2.1, 1.6, C.white, 0.08))).join('')),
     abschluss: await background('abschluss', C.dark, MOTIF + rr(6.2, 1.5, 3.3, 3.2, C.beige)),
   };
 
@@ -336,17 +344,19 @@ async function main() {
     slideNumber,
   });
 
-  // Referenzen (Logo-Raster 4 x 3 auf Sand)
-  pres.defineSlideMaster({
-    title: 'MS_REFERENZEN',
-    background: { path: BG.referenzen },
-    objects: [
-      logo('dark', 8.55, 0.4, 'small'), title(),
-      ...[0, 1, 2].flatMap((r) => [0, 1, 2, 3].map((c) => pic(`logo${r * 4 + c + 1}`, G.logo(r, c), 'Logo einfügen'))),
-      footer(),
-    ],
-    slideNumber,
-  });
+  // Referenzen: Logo-Raster 4 x 3 (breite Logos) und 4 x 2 (Vereinswappen), auf Sand
+  for (const [name, bg, grid] of [['MS_REFERENZEN', BG.referenzen, REF_GRID.breit], ['MS_REFERENZEN_WAPPEN', BG.referenzenHoch, REF_GRID.hoch]]) {
+    pres.defineSlideMaster({
+      title: name,
+      background: { path: bg },
+      objects: [
+        logo('dark', 8.55, 0.4, 'small'), title(),
+        ...Array.from({ length: grid.rows }, (_, r) => r).flatMap((r) => Array.from({ length: grid.cols }, (_, c) => c).map((c) => pic(`logo${r * grid.cols + c + 1}`, G.logoGrid(grid, r, c), 'Logo einfügen'))),
+        footer(),
+      ],
+      slideNumber,
+    });
+  }
 
   // Abschluss: Ansprechpartner + nächster Schritt (dunkel)
   pres.defineSlideMaster({
@@ -525,20 +535,27 @@ async function main() {
     s.addNotes('Layout MS_ANGEBOT: Tabelle als Zusammenfassung (nativ, in PowerPoint editierbar), Konditionen als Platzhalter. Das verbindliche Angebot kommt aus Lexware.');
   }
 
-  // 11 Referenzen
-  {
-    const s = pres.addSlide({ masterName: 'MS_REFERENZEN' });
-    T(s, 'Vereine und Unternehmen, die uns vertrauen');
-    // Echte Kundenlogos aus assets/referenzen/ (alphabetisch, z. B. 01-firma.png), Rest bleibt Platzhalter
-    const refDir = path.join(ASSETS, 'referenzen');
+  // 11 Referenzen: eine Folie pro Unterordner in assets/referenzen/ (unternehmen, vereine)
+  // Logos alphabetisch (z. B. 01-firma.png), freie Felder bleiben Platzhalter
+  const refRoot = path.join(ASSETS, 'referenzen');
+  const refGroups = [
+    ['unternehmen', 'Unternehmen, die uns vertrauen', 'MS_REFERENZEN', REF_GRID.breit],
+    ['vereine', 'Vereine, die uns vertrauen', 'MS_REFERENZEN_WAPPEN', REF_GRID.hoch],
+  ];
+  for (const [group, titel, layout, grid] of refGroups) {
+    const refDir = path.join(refRoot, group);
     const refs = fs.existsSync(refDir) ? fs.readdirSync(refDir).filter((f) => /\.(png|jpe?g|svg)$/i.test(f)).sort() : [];
-    for (let i = 0; i < 12; i++) {
-      const [x, y, w, h] = G.logo(Math.floor(i / 4), i % 4);
+    const s = pres.addSlide({ masterName: layout });
+    T(s, titel);
+    const cells = grid.cols * grid.rows;
+    if (refs.length > cells) console.warn(`Hinweis: ${refs.length} Logos in ${group}, nur ${cells} Felder – Rest wird nicht gezeigt.`);
+    for (let i = 0; i < cells; i++) {
+      const [x, y, w, h] = G.logoGrid(grid, Math.floor(i / grid.cols), i % grid.cols);
       if (refs[i]) {
         // Luft zum Kartenrand; Logo proportional eingepasst und zentriert (pptxgenjs kennt die Bildmaße nicht)
         const pad = 0.16, boxW = w - 2 * pad, boxH = h - 2 * pad;
         // Weiße bzw. transparente Ränder der Datei abschneiden, damit alle Logos ähnlich groß wirken
-        const file = path.join(TMP, `ref-${i}.png`);
+        const file = path.join(TMP, `ref-${group}-${i}.png`);
         await sharp(path.join(refDir, refs[i])).trim({ threshold: 25 }).png().toFile(file);
         const meta = await sharp(file).metadata();
         const scale = Math.min(boxW / meta.width, boxH / meta.height);
@@ -552,10 +569,10 @@ async function main() {
         await IMG(s, `logo${i + 1}`, 'logo', [x, y, w, h]);
       }
     }
-    s.addNotes(`Layout MS_REFERENZEN: zwölf Logo-Felder. ${refs.length} Logo(s) aus assets/referenzen eingesetzt. Logo per Klick auf das Platzhalterbild einsetzen; bei Beschnitt: Bildformat → Zuschneiden → Anpassen.`);
+    s.addNotes(`Layout ${layout}: ${cells} Logo-Felder. ${refs.length} Logo(s) aus assets/referenzen/${group} eingesetzt. Logo per Klick auf das Platzhalterbild einsetzen; bei Beschnitt: Bildformat → Zuschneiden → Anpassen.`);
   }
 
-  // 12 Bild links, Text rechts
+  // 13 Bild links, Text rechts
   {
     const s = pres.addSlide({ masterName: 'MS_BILD' });
     T(s, 'Stickerei im Detail');
@@ -569,7 +586,7 @@ async function main() {
     s.addNotes('Layout MS_BILD: Foto links, Textkörper rechts.');
   }
 
-  // 13 Diagramm
+  // 14 Diagramm
   {
     const s = pres.addSlide({ masterName: 'MS_FREI' });
     T(s, 'Auftragsvolumen nach Produktgruppe');
@@ -592,7 +609,7 @@ async function main() {
     s.addNotes('Layout MS_FREI mit nativem Säulendiagramm links und Kernaussage rechts.');
   }
 
-  // 14 Standardfolie
+  // 15 Standardfolie
   {
     const s = pres.addSlide({ masterName: 'MS_INHALT' });
     T(s, 'Folientitel');
@@ -606,7 +623,7 @@ async function main() {
     s.addNotes('Layout MS_INHALT: Titel und Textkörper mit Aufzählung.');
   }
 
-  // 15 Abschluss
+  // 16 Abschluss
   {
     const s = pres.addSlide({ masterName: 'MS_ABSCHLUSS' });
     T(s, 'Lassen Sie uns Ihr Projekt starten');
