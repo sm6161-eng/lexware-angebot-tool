@@ -671,7 +671,8 @@ async function main() {
             const a = items[page * 12 + i];
             if (!a) continue; // leere Kacheln bleiben Platzhalter
             await IMG(s, `artikel${i + 1}`, 'foto', G.kollektion.tile(i), `kollektionen/${base}/${a.foto.replace(/\.[^.]+$/, '')}`, { fit: 'contain' });
-            P(s, `artikel${i + 1}_name`, a.name); P(s, `artikel${i + 1}_preis`, a.preis);
+            P(s, `artikel${i + 1}_name`, a.name);
+            P(s, `artikel${i + 1}_preis`, a.preis || '');
           }
           s.addNotes(`Layout MS_KOLLEKTION: bis zu zwölf Artikel mit Mockup, Name und Preis. Quelle: assets/fotos/kollektionen/${kf} (aus dem Shopify-Vereinsshop). Preise Stand Build-Datum.`);
         }

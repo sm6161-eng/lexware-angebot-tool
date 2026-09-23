@@ -5,115 +5,96 @@
     {
       "gruppe": "Erwachsene",
       "name": "T-Shirt \"Combi\" Men Light Melange",
-      "preis": "17,20 €",
       "foto": "t-shirt-combi-men-light-melange.jpg"
     },
     {
       "gruppe": "Erwachsene",
       "name": "Hoodie Men Heather Oxford",
-      "preis": "31,60 €",
       "foto": "hoodie-men-heather-oxford.jpg"
     },
     {
       "gruppe": "Erwachsene",
       "name": "Short \"Drive\" Men White",
-      "preis": "14,80 €",
       "foto": "short-drive-men-white.jpg"
     },
     {
       "gruppe": "Erwachsene",
       "name": "Zip Hoodie Men Heather Oxford",
-      "preis": "36,10 €",
       "foto": "zip-hoodie-men-heather-oxford.jpg"
     },
     {
       "gruppe": "Erwachsene",
       "name": "Long Pant \"Staff\" Men Black",
-      "preis": "25,60 €",
       "foto": "long-pant-staff-men-black.jpg"
     },
     {
       "gruppe": "Erwachsene",
       "name": "Sleevless Shirt \"Diana\" Women Light Melange",
-      "preis": "16,50 €",
       "foto": "sleevless-shirt-diana-women-light-melange.jpg"
     },
     {
       "gruppe": "Erwachsene",
       "name": "Hoodie Women Heather Oxford",
-      "preis": "31,60 €",
       "foto": "hoodie-women-heather-oxford.jpg"
     },
     {
       "gruppe": "Erwachsene",
       "name": "T-Shirt \"Combi\" Women Light Melange",
-      "preis": "17,20 €",
       "foto": "t-shirt-combi-women-light-melange.jpg"
     },
     {
       "gruppe": "Erwachsene",
       "name": "Rock \"Torneo III\" Women White",
-      "preis": "24,10 €",
       "foto": "rock-torneo-iii-women-white.jpg"
     },
     {
       "gruppe": "Erwachsene",
       "name": "Zip Hoodie Women Heather Oxford",
-      "preis": "36,10 €",
       "foto": "zip-hoodie-women-heather-oxford.jpg"
     },
     {
       "gruppe": "Erwachsene",
       "name": "Short \"Hobby\" Women White",
-      "preis": "15,50 €",
       "foto": "short-hobby-women-white.jpg"
     },
     {
       "gruppe": "Erwachsene",
       "name": "Long Pant \"Staff\" Women Black",
-      "preis": "25,60 €",
       "foto": "long-pant-staff-women-black.jpg"
     },
     {
       "gruppe": "Jugend",
       "name": "T-Shirt \"Combi\" Men Skye Blue",
-      "preis": "17,20 €",
       "foto": "t-shirt-combi-men-skye-blue.jpg"
     },
     {
       "gruppe": "Jugend",
       "name": "Hoodie Kids Heather Oxford",
-      "preis": "23,10 €",
       "foto": "hoodie-kids-heather-oxford.jpg"
     },
     {
       "gruppe": "Jugend",
       "name": "Short \"Drive\" Men Navy",
-      "preis": "14,80 €",
       "foto": "short-drive-men-navy.jpg"
     },
     {
       "gruppe": "Jugend",
       "name": "T-Shirt \"Combi\" Women Sky Blue",
-      "preis": "17,20 €",
       "foto": "t-shirt-combi-women-sky-blue.jpg"
     },
     {
       "gruppe": "Jugend",
       "name": "Rock \"Open II\" Women Navy",
-      "preis": "26,40 €",
       "foto": "rock-open-ii-women-navy.jpg"
     },
     {
       "gruppe": "Jugend",
       "name": "Short \"Hobby\" Women Navy",
-      "preis": "15,50 €",
       "foto": "short-hobby-women-navy.jpg"
     },
     {
       "gruppe": "Jugend",
       "name": "Sleevless Shirt \"Diana\" Women Sky Blue",
-      "preis": "16,50 €",
       "foto": "sleevless-shirt-diana-women-sky-blue.jpg"
     }
   ]
