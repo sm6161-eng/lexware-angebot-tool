@@ -133,6 +133,7 @@ const G = {
   portrait: [0.6, 3.45, 1.05, 1.05],
   projekt: [[0.5, 1.35, 4.4, 3.5], [5.1, 1.35, 2.15, 1.65], [7.45, 1.35, 2.05, 1.65], [5.1, 3.2, 4.4, 1.65]],
   kunde: { hero: [4.0, 1.35, 5.5, 2.0], klein: [0, 1, 2].map((i) => [4.0 + i * 1.885, 3.5, 1.73, 1.3]) },
+  kollektion: { cols: 6, rows: 2, tile: (i) => [0.5 + (i % 6) * 1.525, 1.35 + Math.floor(i / 6) * 1.72, 1.375, 1.12] },
   qr: [6.45, 3.5, 1.0, 1.0],
 };
 // Referenz-Raster: 4 x 3 breite Felder (Unternehmen) und 4 x 2 hohe Felder (Vereinswappen)
@@ -348,6 +349,26 @@ async function main() {
     slideNumber,
   });
 
+  // Kollektionsübersicht (12 Artikel-Kacheln: Mockup, Name, Preis)
+  pres.defineSlideMaster({
+    title: 'MS_KOLLEKTION',
+    background: { color: C.white },
+    objects: [
+      logo('dark', 8.55, 0.4, 'small'), title(),
+      ph('sub', 'body', 'Was die Kollektion ausmacht', { x: 0.5, y: 1.0, w: 7.8, h: 0.3, fontSize: FS.sub, align: 'left', valign: 'middle', ...MUTED_ON_LIGHT }),
+      ...Array.from({ length: 12 }, (_, i) => i).flatMap((i) => {
+        const [x, y, w, h] = G.kollektion.tile(i);
+        return [
+          pic(`artikel${i + 1}`, [x, y, w, h]),
+          ph(`artikel${i + 1}_name`, 'body', 'Artikel', { x, y: y + h + 0.02, w, h: 0.34, fontSize: FS.label, bold: true, color: C.dark, align: 'left', valign: 'top' }),
+          ph(`artikel${i + 1}_preis`, 'body', '0,00 €', { x, y: y + h + 0.36, w, h: 0.2, fontSize: FS.label, bold: true, color: C.greenDark, align: 'left', valign: 'top' }),
+        ];
+      }),
+      footer(),
+    ],
+    slideNumber,
+  });
+
   // Textil-Auswahl (3 Rohlinge)
   pres.defineSlideMaster({
     title: 'MS_TEXTIL',
@@ -454,13 +475,13 @@ async function main() {
   const P = (s, name, text, o = {}) => s.addText(text, { placeholder: name, isTextBox: true, ...o });
   // Bild in einen Bildplatzhalter: echtes Foto aus assets/fotos/<foto>.jpg (auf das Feld zugeschnitten), sonst Platzhalterbild
   const FOTOS = path.join(ASSETS, 'fotos');
-  const IMG = async (s, name, kind, [x, y, w, h], foto, { gradient = false } = {}) => {
+  const IMG = async (s, name, kind, [x, y, w, h], foto, { gradient = false, fit = 'cover' } = {}) => {
     const real = foto && ['jpg', 'jpeg', 'png'].map((e) => path.join(FOTOS, `${foto}.${e}`)).find((f) => fs.existsSync(f));
     let file;
     if (real) {
-      file = path.join(TMP, `foto-${foto}-${Math.round(w * 100)}x${Math.round(h * 100)}.jpg`);
+      file = path.join(TMP, `foto-${foto.replace(/[\/\\]/g, '_')}-${Math.round(w * 100)}x${Math.round(h * 100)}.jpg`);
       const pw = Math.round(w * 300), phh = Math.round(h * 300);
-      let img = sharp(real).resize(pw, phh, { fit: 'cover', position: 'centre' });
+      let img = sharp(real).resize(pw, phh, { fit, position: 'centre', background: '#FFFFFF' });
       if (gradient) { // dunkler Verlauf unten, damit weiße Bildunterschriften lesbar bleiben
         const gh = Math.round(phh * 0.55);
         const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${pw}" height="${phh}"><defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0F0F0F" stop-opacity="0"/><stop offset="1" stop-color="#0F0F0F" stop-opacity="0.85"/></linearGradient></defs><rect x="0" y="${phh - gh}" width="${pw}" height="${gh}" fill="url(#g)"/></svg>`;
@@ -629,6 +650,33 @@ async function main() {
     const teile = [['isic-polo', 'Polo, Brust und Ärmel'], ['isic-zip', 'Zip-Sweatshirt, Ärmel'], ['isic-shirt', 'T-Shirt, Rückenmotiv']];
     for (let i = 0; i < 3; i++) { await IMG(s, `teil${i + 1}`, 'foto', G.kunde.klein[i], teile[i][0]); P(s, `teil${i + 1}_name`, teile[i][1]); }
     s.addNotes('Layout MS_PROJEKT_KUNDE: ein Kunde im Detail. Text links (Aufgabe, Umsetzung), Kollektionsfoto oben rechts, drei Einzelteile darunter mit Beschriftung. Fotos aus assets/fotos/isic-*.jpg.');
+  }
+
+  // 8d Kollektionsübersichten aus assets/fotos/kollektionen/<name>.json
+  {
+    const kDir = path.join(FOTOS, 'kollektionen');
+    const kFiles = fs.existsSync(kDir) ? fs.readdirSync(kDir).filter((f) => f.endsWith('.json')).sort() : [];
+    for (const kf of kFiles) {
+      const k = JSON.parse(fs.readFileSync(path.join(kDir, kf), 'utf8'));
+      const base = kf.replace(/\.json$/, '');
+      const gruppen = [...new Set(k.artikel.map((a) => a.gruppe || ''))];
+      for (const gruppe of gruppen) {
+        const items = k.artikel.filter((a) => (a.gruppe || '') === gruppe);
+        const pages = Math.ceil(items.length / 12);
+        for (let page = 0; page < pages; page++) {
+          const s = pres.addSlide({ masterName: 'MS_KOLLEKTION' });
+          T(s, `${k.titel}${gruppe ? ' · ' + gruppe : ''}${pages > 1 ? ` (${page + 1}/${pages})` : ''}`);
+          P(s, 'sub', k.unterzeile || '');
+          for (let i = 0; i < 12; i++) {
+            const a = items[page * 12 + i];
+            if (!a) continue; // leere Kacheln bleiben Platzhalter
+            await IMG(s, `artikel${i + 1}`, 'foto', G.kollektion.tile(i), `kollektionen/${base}/${a.foto.replace(/\.[^.]+$/, '')}`, { fit: 'contain' });
+            P(s, `artikel${i + 1}_name`, a.name); P(s, `artikel${i + 1}_preis`, a.preis);
+          }
+          s.addNotes(`Layout MS_KOLLEKTION: bis zu zwölf Artikel mit Mockup, Name und Preis. Quelle: assets/fotos/kollektionen/${kf} (aus dem Shopify-Vereinsshop). Preise Stand Build-Datum.`);
+        }
+      }
+    }
   }
 
   // 8 Textil-Auswahl

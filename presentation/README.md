@@ -9,10 +9,10 @@ Warm Sand `#E8DFD0`, Sand Dark `#D9D2C5`, Weiß. Schrift: Inter.
 | Datei | Zweck |
 |---|---|
 | `dist/Maiershirts_Master.potx` | **Die Vorlage.** Doppelklick öffnet eine neue Präsentation mit allen Layouts und Platzhaltern. |
-| `dist/Maiershirts_Master.pptx` | Beispieldeck: jedes Layout einmal mit Musterinhalt (21 Folien). Zum Abschauen und Kopieren. |
+| `dist/Maiershirts_Master.pptx` | Beispieldeck: jedes Layout einmal mit Musterinhalt (23 Folien). Zum Abschauen und Kopieren. |
 | `assets/logo.svg` | Original-Logo (Vektor) |
 | `assets/logo-dark.png`, `assets/logo-light.png` | Logo schwarz (helle Folien) und weiß (dunkle Folien), erzeugt aus `logo.svg` |
-| `assets/fotos/` | Echte Fotos für das Beispieldeck: `vollbild`, `bild`, `textil-1` bis `textil-3`, `projekt-1` bis `projekt-4`, `isic-kollektion`, `isic-polo`, `isic-zip`, `isic-shirt` (jpg/png). Fehlt eine Datei, setzt der Build ein Platzhalterbild. |
+| `assets/fotos/` | Echte Fotos für das Beispieldeck: `vollbild`, `bild`, `textil-1` bis `textil-3`, `projekt-1` bis `projekt-4`, `isic-kollektion`, `isic-polo`, `isic-zip`, `isic-shirt`. Kollektionen: `kollektionen/<name>.json` plus Bilder in `kollektionen/<name>/`, je Gruppe eine Folie (jpg/png). Fehlt eine Datei, setzt der Build ein Platzhalterbild. |
 | `assets/referenzen/unternehmen/`, `.../vereine/` | Kundenlogos für die Referenzfolien, nummeriert (`01-name.png`). Vereine: Namen in `namen.json`. |
 | `build.js` | Erzeugt POTX und PPTX (`npm run build`) |
 | `make-logo.js` | Erzeugt die beiden Logo-PNGs aus `logo.svg` (`npm run logo`) |
@@ -20,7 +20,7 @@ Warm Sand `#E8DFD0`, Sand Dark `#D9D2C5`, Weiß. Schrift: Inter.
 ## So wird gearbeitet
 
 1. `Maiershirts_Master.potx` doppelklicken. PowerPoint öffnet eine neue
-   Präsentation mit den Maiershirts-Layouts und den 21 Musterfolien.
+   Präsentation mit den Maiershirts-Layouts und den 23 Musterfolien.
    Nicht benötigte Musterfolien löschen, die Vorlage selbst bleibt unverändert.
 2. Folien über **Start → Neue Folie** anlegen und das passende Layout wählen.
    Jede Folie hat Platzhalter mit Hinweistext (z. B. „Foto einfügen“,
@@ -55,6 +55,7 @@ exportieren, dann ist die Schrift eingebettet.
 | `MS_VERFAHREN` | Vier Veredelungsverfahren mit Einsatzgebiet und Kennwerten, Entscheidungshilfe | Titel, Unterzeile, 4 × Name, Ideal für, Wäsche, Auflage, Farbe; Fazit |
 | `MS_PROJEKTE` | Vier Projektfotos (eins groß, drei klein) mit Kunde und Kurztext im Bild | Titel, Unterzeile, 4 × Foto, Kunde, Text |
 | `MS_PROJEKT_KUNDE` | Ein Kunde im Detail: Text links, Kollektionsfoto und drei Einzelteile rechts | Titel, Unterzeile, Textkörper, Hero-Foto, 3 × Foto, Beschriftung |
+| `MS_KOLLEKTION` | Kollektionsübersicht, bis zu zwölf Artikel mit Mockup, Name und Preis | Titel, Unterzeile, 12 × Foto, Name, Preis |
 | `MS_TEXTIL` | Drei Textilien mit Foto, Details und Preis ab | 3 × Foto, Name, Details, Preis |
 | `MS_PREISSTAFFEL` | Vier Stufen Menge gegen Stückpreis | 4 × Stufe, Preis, Zusatz; Hinweis |
 | `MS_ANGEBOT` | Angebotsübersicht mit Konditionen | Titel, Gültig bis, Lieferzeit, Zahlung, Hinweis (Tabelle: Musterfolie kopieren) |
