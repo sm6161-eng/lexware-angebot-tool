@@ -138,8 +138,8 @@ const G = {
 };
 // Referenz-Raster: 4 x 3 breite Felder (Unternehmen) und 4 x 2 hohe Felder (Vereinswappen)
 const REF_GRID = {
-  breit: { cols: 4, rows: 4, cellW: 2.1, cellH: 0.78, x0: 0.62, y0: 1.47, dx: 2.3, dy: 0.86, w: 1.86, h: 0.54 },
-  hoch: { cols: 4, rows: 2, cellW: 2.1, cellH: 1.6, x0: 0.62, y0: 1.47, dx: 2.3, dy: 1.75, w: 1.86, h: 1.05, caption: { dy: 1.17, h: 0.3 } },
+  breit: { cols: 4, rows: 4, cellW: 2.1, cellH: 0.82, x0: 0.58, y0: 1.41, dx: 2.3, dy: 0.88, w: 1.94, h: 0.7 },
+  hoch: { cols: 4, rows: 2, cellW: 2.1, cellH: 1.6, x0: 0.58, y0: 1.43, dx: 2.3, dy: 1.75, w: 1.94, h: 1.12, caption: { dy: 1.21, h: 0.3 } },
 };
 const pic = (name, [x, y, w, h], prompt = 'Foto einfügen') => ph(name, 'pic', prompt, { x, y, w, h, fontSize: FS.sub, align: 'center', valign: 'middle', ...MUTED_ON_LIGHT });
 const txt = (text, o) => ({ text: { text, options: { fontFace: FONT, margin: 0, ...o } } });
@@ -176,7 +176,7 @@ async function main() {
     verfahren: await background('verfahren', C.white, [0, 1, 2, 3].map((i) => rr(0.5 + i * 2.3, 1.35, 2.15, 3.2, C.beige)).join('')),
     angebot: await background('angebot', C.white, rr(0.5, 4.05, 9, 0.8, C.beige)),
     referenzen: await background('referenzen', C.beige,
-      [0, 1, 2, 3].flatMap((r) => [0, 1, 2, 3].map((c) => rr(0.5 + c * 2.3, 1.35 + r * 0.86, 2.1, 0.78, C.white, 0.08))).join('')),
+      [0, 1, 2, 3].flatMap((r) => [0, 1, 2, 3].map((c) => rr(0.5 + c * 2.3, 1.35 + r * 0.88, 2.1, 0.82, C.white, 0.08))).join('')),
     referenzenHoch: await background('referenzen-hoch', C.beige,
       [0, 1].flatMap((r) => [0, 1, 2, 3].map((c) => rr(0.5 + c * 2.3, 1.35 + r * 1.75, 2.1, 1.6, C.white, 0.08))).join('')),
     abschluss: await background('abschluss', C.dark, MOTIF + rr(6.2, 1.5, 3.3, 3.2, C.beige)),
@@ -532,7 +532,7 @@ async function main() {
         if (!pageRefs[i]) continue; // freie Felder bleiben leere Karten
         const [x, y, w, h] = G.logoGrid(grid, Math.floor(i / grid.cols), i % grid.cols);
         // Ränder abschneiden, Logo proportional einpassen und zentrieren (pptxgenjs kennt die Bildmaße nicht)
-        const pad = 0.14, boxW = w - 2 * pad, boxH = h - 2 * pad;
+        const pad = 0.04, boxW = w - 2 * pad, boxH = h - 2 * pad;
         const file = path.join(TMP, `ref-${group}-${page}-${i}.png`);
         await sharp(path.join(refDir, pageRefs[i])).trim({ threshold: 25 }).png().toFile(file);
         const meta = await sharp(file).metadata();
