@@ -680,7 +680,7 @@ async function main() {
       { text: 'Aufgabe', options: { bold: true, fontSize: FS.h, breakLine: true } },
       { text: 'Einheitliche Arbeitskleidung vom Polo bis zum Sweatshirt, mit Firmenlogo auf der Brust und Handwerker-Motiv auf dem Rücken.', options: { fontSize: FS.sub, breakLine: true, paraSpaceAfter: 12 } },
       { text: 'Umsetzung', options: { bold: true, fontSize: FS.h, breakLine: true } },
-      { text: 'Polo-Shirts und Zip-Sweatshirts in Weiß, Logo auf Brust und Ärmel', options: { bullet: true, fontSize: FS.sub, breakLine: true } },
+      { text: 'Polos, Sweatshirts und Zip-Sweatshirts in Weiß, Logo auf Brust und Ärmel', options: { bullet: true, fontSize: FS.sub, breakLine: true } },
       { text: 'T-Shirts in Weiß und Rot mit Rückenmotiv', options: { bullet: true, fontSize: FS.sub, breakLine: true } },
       { text: 'Einfarbiger Druck, waschbeständig für den Baustellenalltag', options: { bullet: true, fontSize: FS.sub, breakLine: true } },
       { text: 'Artikel sind im System hinterlegt, Nachbestellung jederzeit möglich', options: { bullet: true, fontSize: FS.sub } },
