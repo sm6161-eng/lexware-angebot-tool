@@ -138,7 +138,7 @@ const G = {
 };
 // Referenz-Raster: 4 x 3 breite Felder (Unternehmen) und 4 x 2 hohe Felder (Vereinswappen)
 const REF_GRID = {
-  breit: { cols: 4, rows: 3, cellW: 2.1, cellH: 1.05, x0: 0.62, y0: 1.47, dx: 2.3, dy: 1.2, w: 1.86, h: 0.81 },
+  breit: { cols: 4, rows: 4, cellW: 2.1, cellH: 0.78, x0: 0.62, y0: 1.47, dx: 2.3, dy: 0.86, w: 1.86, h: 0.54 },
   hoch: { cols: 4, rows: 2, cellW: 2.1, cellH: 1.6, x0: 0.62, y0: 1.47, dx: 2.3, dy: 1.75, w: 1.86, h: 1.05, caption: { dy: 1.17, h: 0.3 } },
 };
 const pic = (name, [x, y, w, h], prompt = 'Foto einfügen') => ph(name, 'pic', prompt, { x, y, w, h, fontSize: FS.sub, align: 'center', valign: 'middle', ...MUTED_ON_LIGHT });
@@ -176,7 +176,7 @@ async function main() {
     verfahren: await background('verfahren', C.white, [0, 1, 2, 3].map((i) => rr(0.5 + i * 2.3, 1.35, 2.15, 3.2, C.beige)).join('')),
     angebot: await background('angebot', C.white, rr(0.5, 4.05, 9, 0.8, C.beige)),
     referenzen: await background('referenzen', C.beige,
-      [0, 1, 2].flatMap((r) => [0, 1, 2, 3].map((c) => rr(0.5 + c * 2.3, 1.35 + r * 1.2, 2.1, 1.05, C.white, 0.08))).join('')),
+      [0, 1, 2, 3].flatMap((r) => [0, 1, 2, 3].map((c) => rr(0.5 + c * 2.3, 1.35 + r * 0.86, 2.1, 0.78, C.white, 0.08))).join('')),
     referenzenHoch: await background('referenzen-hoch', C.beige,
       [0, 1].flatMap((r) => [0, 1, 2, 3].map((c) => rr(0.5 + c * 2.3, 1.35 + r * 1.75, 2.1, 1.6, C.white, 0.08))).join('')),
     abschluss: await background('abschluss', C.dark, MOTIF + rr(6.2, 1.5, 3.3, 3.2, C.beige)),
@@ -428,7 +428,7 @@ async function main() {
     slideNumber,
   });
 
-  // Referenzen: Logo-Raster 4 x 3 (breite Logos) und 4 x 2 (Vereinswappen), auf Sand
+  // Referenzen: Logo-Raster 4 x 4 (breite Logos) und 4 x 2 (Vereinswappen), auf Sand
   for (const [name, bg, grid] of [['MS_REFERENZEN', BG.referenzen, REF_GRID.breit], ['MS_REFERENZEN_WAPPEN', BG.referenzenHoch, REF_GRID.hoch]]) {
     pres.defineSlideMaster({
       title: name,
@@ -494,62 +494,91 @@ async function main() {
     s.addImage({ placeholder: name, path: file, x, y, w, h });
   };
 
-  // 1 Titel
+  // Aufbau: gemeinsamer Einstieg (neutral) → Abschnitt „Für Vereine“ (du) → Abschnitt „Für Unternehmen“ (Sie) → Abschluss
+  const KONTAKT_TEL = '+49 171 9005694', KONTAKT_MAIL = 'office@maiershirts.de';
+
+  // Wiederverwendbare Bausteine
+  const projekteSlide = async (file, titel, unterzeile) => {
+    const listFile = path.join(FOTOS, file);
+    const projekte = fs.existsSync(listFile) ? JSON.parse(fs.readFileSync(listFile, 'utf8')) : [];
+    const pages = Math.max(1, Math.ceil(projekte.length / 4));
+    for (let page = 0; page < pages; page++) {
+      const s = pres.addSlide({ masterName: 'MS_PROJEKTE' });
+      T(s, pages > 1 ? `${titel} (${page + 1}/${pages})` : titel);
+      P(s, 'sub', unterzeile);
+      for (let i = 0; i < 4; i++) {
+        const pr = projekte[page * 4 + i];
+        if (!pr) continue;
+        await IMG(s, `projekt${i + 1}`, 'foto', G.projekt[i], pr.foto, { gradient: true });
+        P(s, `projekt${i + 1}_name`, pr.kunde); P(s, `projekt${i + 1}_text`, pr.text);
+      }
+      s.addNotes(`Layout MS_PROJEKTE: ein großes und drei kleine Fotos mit Kunde und Kurztext im Bild. Einträge in assets/fotos/${file}, Fotos daneben.`);
+    }
+  };
+  const referenzSlides = async (group, titel, layout, grid, unterzeile) => {
+    const refDir = path.join(ASSETS, 'referenzen', group);
+    const refs = fs.existsSync(refDir) ? fs.readdirSync(refDir).filter((f) => /\.(png|jpe?g|svg)$/i.test(f)).sort() : [];
+    const namenFile = path.join(refDir, 'namen.json');
+    const namen = fs.existsSync(namenFile) ? JSON.parse(fs.readFileSync(namenFile, 'utf8')) : {};
+    const nameOf = (f) => namen[f] || f.replace(/^\d+-/, '').replace(/\.[^.]+$/, '').replace(/-/g, ' ');
+    const cells = grid.cols * grid.rows;
+    const pages = Math.max(1, Math.ceil(refs.length / cells));
+    for (let page = 0; page < pages; page++) {
+      const pageRefs = refs.slice(page * cells, (page + 1) * cells);
+      const s = pres.addSlide({ masterName: layout });
+      T(s, pages > 1 ? `${titel} (${page + 1}/${pages})` : titel);
+      P(s, 'sub', unterzeile);
+      for (let i = 0; i < cells; i++) {
+        if (!pageRefs[i]) continue; // freie Felder bleiben leere Karten
+        const [x, y, w, h] = G.logoGrid(grid, Math.floor(i / grid.cols), i % grid.cols);
+        // Ränder abschneiden, Logo proportional einpassen und zentrieren (pptxgenjs kennt die Bildmaße nicht)
+        const pad = 0.14, boxW = w - 2 * pad, boxH = h - 2 * pad;
+        const file = path.join(TMP, `ref-${group}-${page}-${i}.png`);
+        await sharp(path.join(refDir, pageRefs[i])).trim({ threshold: 25 }).png().toFile(file);
+        const meta = await sharp(file).metadata();
+        const scale = Math.min(boxW / meta.width, boxH / meta.height);
+        const lw = meta.width * scale, lh = meta.height * scale;
+        const lx = x + pad + (boxW - lw) / 2, ly = y + pad + (boxH - lh) / 2;
+        s.addImage({ placeholder: `logo${i + 1}`, path: file, x: lx, y: ly, w: lw, h: lh });
+        // pptxgenjs setzt bei Platzhalterbildern immer die Platzhalterposition; die zentrierte Position wird im Paket nachgetragen
+        const phObj = s._slideLayout._slideObjects.find((o) => o.options && o.options.placeholder === `logo${i + 1}`);
+        PIC_FIX.push({ slideNum: s._slideNum, idx: phObj.options._placeholderIdx, x: lx, y: ly });
+        if (grid.caption) P(s, `name${i + 1}`, nameOf(pageRefs[i]));
+      }
+      s.addNotes(`Layout ${layout}: ${cells} Logo-Felder, ${pageRefs.length} belegt aus assets/referenzen/${group}. Logo per Klick auf ein Feld einsetzen; bei Beschnitt: Bildformat → Zuschneiden → Anpassen.`);
+    }
+  };
+  const abschnitt = (num, titel, sub) => {
+    const s = pres.addSlide({ masterName: 'MS_ABSCHNITT' });
+    P(s, 'num', num); T(s, titel); P(s, 'sub', sub);
+    s.addNotes('Layout MS_ABSCHNITT: Nummer, Titel, Kurzbeschreibung.');
+  };
+
+  // ---------- Gemeinsamer Einstieg ----------
   {
     const s = pres.addSlide({ masterName: 'MS_TITEL' });
-    T(s, 'Angebotspräsentation');
-    P(s, 'sub', 'Individuell veredelte Textilien für Teams, Vereine und Unternehmen');
-    P(s, 'kunde', `Angebot für: ${KUNDE}`);
-    P(s, 'meta', 'September 2026 · Angebot Nr. 2026-0815');
-    s.addNotes('Layout MS_TITEL. Alle vier Felder sind Platzhalter: Titel, Untertitel, Kunde/Projekt, Datum/Angebotsnummer.');
+    T(s, 'Textilveredelung aus Ammerbuch');
+    P(s, 'sub', 'Druck und Stickerei für Vereine und Unternehmen. Aus einer Hand, aus der Region.');
+    P(s, 'kunde', 'Firmenpräsentation');
+    P(s, 'meta', 'September 2026 · maiershirts.de');
+    s.addNotes('Layout MS_TITEL. Für ein Kundenangebot: Feld „Firmenpräsentation“ durch „Angebot für: Kunde · Projekt“ ersetzen, Datum und Angebotsnummer eintragen.');
   }
-
-  // 2 Agenda
-  {
-    const s = pres.addSlide({ masterName: 'MS_INHALT' });
-    T(s, 'Agenda');
-    const items = [
-      ['01', 'Über uns', 'Wer wir sind und wofür wir stehen'],
-      ['02', 'Leistungen', 'Verfahren, Textilien und Veredelung'],
-      ['03', 'Ihr Angebot', 'Textilien, Staffelpreise und Positionen'],
-      ['04', 'Nächste Schritte', 'Freigabe, Produktion und Lieferung'],
-    ];
-    const runs = [];
-    items.forEach(([num, head, desc], i) => {
-      runs.push({ text: `${num}   `, options: { fontSize: FS.h, bold: true, color: C.greenDark } });
-      runs.push({ text: head, options: { fontSize: FS.h, bold: true, color: C.dark, breakLine: true } });
-      runs.push({ text: `        ${desc}`, options: { fontSize: FS.sub, ...MUTED_ON_LIGHT, breakLine: i < items.length - 1, paraSpaceAfter: 14 } });
-    });
-    s.addText(runs, { placeholder: 'body', isTextBox: true, paraSpaceAfter: 2 });
-    s.addNotes('Layout MS_INHALT: Titel und Textkörper. Die Agenda ist normaler Text im Textkörper.');
-  }
-
-  // 3 Abschnitt
-  {
-    const s = pres.addSlide({ masterName: 'MS_ABSCHNITT' });
-    P(s, 'num', '01');
-    T(s, 'Über uns');
-    P(s, 'sub', 'Textilveredelung aus einer Hand: persönlich, schnell und in gleichbleibender Qualität');
-    s.addNotes('Layout MS_ABSCHNITT: Nummer, Titel, Kurzbeschreibung.');
-  }
-
-  // 4 Was uns ausmacht (freie Folie auf Sand, Karten weiß)
   {
     const s = pres.addSlide({ masterName: 'MS_FREI_SAND' });
     T(s, 'Was uns ausmacht');
-    s.addText('Maiershirts veredelt Textilien für Unternehmen, Vereine und Events. Vom einzelnen Shirt bis zur kompletten Teamausstattung begleiten wir jedes Projekt persönlich, von der Motividee bis zum fertigen Paket.',
+    s.addText('Maiershirts veredelt Textilien für Vereine, Unternehmen und Events. Vom einzelnen Shirt bis zur kompletten Teamausstattung: Beratung, Textil, Druck oder Stickerei und Versand kommen aus einer Hand.',
       { x: 0.5, y: 1.35, w: 4.1, h: 1.6, fontFace: FONT, fontSize: FS.body, color: C.dark, valign: 'top', margin: 0, isTextBox: true });
     s.addText([
       { text: 'Beratung zu Textil, Verfahren und Motiv', options: { bullet: true, breakLine: true } },
       { text: 'Druck und Stickerei im eigenen Haus', options: { bullet: true, breakLine: true } },
-      { text: 'Kleine Auflagen ab 1 Stück', options: { bullet: true, breakLine: true } },
-      { text: 'Verlässliche Liefertermine', options: { bullet: true } },
+      { text: 'Ab 1 Stück, Serien mit exaktem Farb-Match', options: { bullet: true, breakLine: true } },
+      { text: 'Motive und Artikel bleiben hinterlegt', options: { bullet: true } },
     ], { x: 0.5, y: 3.0, w: 4.1, h: 1.8, fontFace: FONT, fontSize: FS.body, color: C.dark, valign: 'top', margin: 0, paraSpaceAfter: 6, isTextBox: true });
     const cards = [
-      ['Siebdruck', 'Kräftige Farben, ideal für größere Auflagen'],
-      ['Stickerei', 'Hochwertig und langlebig, erste Wahl für Workwear'],
-      ['Express', 'Kurze Produktionszeiten auf Anfrage'],
-      ['Qualität', 'Geprüfte Textilien namhafter Hersteller'],
+      ['Textil', 'Markenqualität von Joma, B&C, Stanley/Stella und weiteren Herstellern'],
+      ['Veredelung', 'Digitaldruck, Siebdrucktransfer, Spezialtransfer und Stickerei'],
+      ['Vereinsshop', 'Eigene Shop-Seite je Verein: online bestellen statt Listen sammeln'],
+      ['Nachbestellung', 'Motive, Größen und Artikel bleiben im System, jederzeit abrufbar'],
     ];
     cards.forEach(([head, desc], i) => {
       const col = i % 2, row = Math.floor(i / 2);
@@ -557,46 +586,29 @@ async function main() {
       s.addShape('roundRect', { x, y, w: 2.15, h: 1.65, fill: { color: C.white }, line: { color: C.white }, rectRadius: 0.12 });
       s.addShape('line', { x: x + 0.25, y: y + 0.3, w: 0.4, h: 0, line: { color: C.green, width: 3 } });
       s.addText(head, { x: x + 0.25, y: y + 0.45, w: 1.7, h: 0.35, fontFace: FONT, fontSize: FS.h, bold: true, color: C.dark, margin: 0, isTextBox: true });
-      s.addText(desc, { x: x + 0.25, y: y + 0.82, w: 1.7, h: 0.7, fontFace: FONT, fontSize: FS.sub, ...MUTED_ON_LIGHT, valign: 'top', margin: 0, isTextBox: true });
+      s.addText(desc, { x: x + 0.25, y: y + 0.82, w: 1.7, h: 0.75, fontFace: FONT, fontSize: FS.sub, ...MUTED_ON_LIGHT, valign: 'top', margin: 0, isTextBox: true });
     });
-    s.addNotes('Layout MS_FREI_SAND: nur Titel, Fläche frei. Hier: Text links, vier weiße Karten rechts.');
+    s.addNotes('Layout MS_FREI_SAND: Text links, vier Karten rechts.');
   }
-
-  // 5 Vollbild-Foto
   {
     const s = pres.addSlide({ masterName: 'MS_BILD_VOLL' });
     await IMG(s, 'foto', 'foto', G.voll, 'vollbild');
-    T(s, 'Ihr Motiv auf dem Textil');
-    P(s, 'sub', 'Maiershirts-Logo auf Polo-Shirt, Beispiel aus der Produktion');
-    s.addNotes('Layout MS_BILD_VOLL: Foto über die volle Breite, darunter Bildunterschrift. Bild per Klick auf das Platzhalterbild ersetzen.');
+    T(s, 'Ein Motiv, das sitzt.');
+    P(s, 'sub', 'Maiershirts-Logo auf Polo-Shirt, aus der eigenen Produktion');
+    s.addNotes('Layout MS_BILD_VOLL: Foto über die volle Breite, Bildunterschrift darunter.');
   }
-
-  // 6 Kennzahlen
-  {
-    const s = pres.addSlide({ masterName: 'MS_KENNZAHLEN' });
-    T(s, 'Zahlen, die für uns sprechen');
-    [['1.200+', 'Projekte pro Jahr', 'Beispielwert'], ['48 h', 'bis zum Angebot', 'Beispielwert'], ['98 %', 'Wiederkehrende Kunden', 'Beispielwert']].forEach(([big, label, note], i) => {
-      P(s, `kpi${i + 1}`, big); P(s, `kpi${i + 1}_label`, label); P(s, `kpi${i + 1}_note`, note);
-    });
-    P(s, 'hinweis', 'Alle Werte sind Platzhalter und werden vor Verwendung durch echte Kennzahlen ersetzt.');
-    s.addNotes('Layout MS_KENNZAHLEN: drei Karten mit Zahl, Bedeutung und Quelle, dazu eine Hinweiszeile.');
-  }
-
-  // 7 Prozess
   {
     const s = pres.addSlide({ masterName: 'MS_PROZESS' });
     T(s, 'So läuft ein Auftrag ab');
-    [['Anfrage', 'Textil, Menge und Motiv per Mail oder Telefon'], ['Angebot', 'Angebot aus Lexware innerhalb von 48 Stunden'], ['Produktion', 'Druck oder Stickerei nach Ihrer Freigabe'], ['Lieferung', 'Versand oder Abholung zum Wunschtermin']].forEach(([head, desc], i) => {
+    [['Anfrage', 'Textil, Menge und Motiv per Mail, Telefon oder über den Shop'], ['Angebot', 'Angebot und Mockup zur Freigabe innerhalb von 48 Stunden'], ['Produktion', 'Druck oder Stickerei nach Freigabe, im eigenen Haus'], ['Lieferung', 'Versand oder Abholung zum vereinbarten Termin']].forEach(([head, desc], i) => {
       P(s, `schritt${i + 1}`, head); P(s, `schritt${i + 1}_text`, desc);
     });
-    s.addNotes('Layout MS_PROZESS: vier nummerierte Schritte mit Überschrift und Kurztext.');
+    s.addNotes('Layout MS_PROZESS: vier nummerierte Schritte.');
   }
-
-  // 7b Verfahrensvergleich (Inhalte aus dem Veredelungs-Leitfaden)
   {
     const s = pres.addSlide({ masterName: 'MS_VERFAHREN' });
     T(s, 'Vier Verfahren, ein Anspruch');
-    P(s, 'sub', 'Ehrlich mit Stärken und Grenzen, damit Ihr Motiv da landet, wo es am besten sitzt.');
+    P(s, 'sub', 'Ehrlich mit Stärken und Grenzen, damit jedes Motiv da landet, wo es am besten sitzt.');
     const verfahren = [
       ['Digitaldruck', 'Fotos, viele Farben, Namen und Nummern. Kleine Mengen, gemischte Größen, fast jedes Material.', ['bis 60 °C', 'ab 1 Stück', 'Vollfarbe']],
       ['Siebdrucktransfer', 'Serien mit gleichem Motiv: Team-, Vereins- und Workwear. Exaktes Farb-Match, lagerbar für Nachbestellungen.', ['50+ Wäschen', 'ab 25 Stück', 'Sonderfarben']],
@@ -611,49 +623,24 @@ async function main() {
       { text: 'Kurz entschieden: ', options: { bold: true } },
       { text: 'Foto und viele Farben → Digitaldruck · Exakte Farbe in Serie → Siebdrucktransfer · Industriewäsche → Spezialtransfer · Edler Logo-Look → Stickerei. Auf Anfrage: Sublimation und Siebdruck direkt.' },
     ], { placeholder: 'fazit', isTextBox: true });
-    s.addNotes('Layout MS_VERFAHREN: vier Verfahren mit Einsatzgebiet und drei Kennwerten, darunter die Entscheidungshilfe. Inhalte aus dem Veredelungs-Leitfaden (maiershirts-veredelung-leitfaden/leitfaden.html). Handmuster-Karte „Fühl den Unterschied“ zum Termin mitnehmen.');
+    s.addNotes('Layout MS_VERFAHREN: vier Verfahren mit Einsatzgebiet und Kennwerten. Inhalte aus dem Veredelungs-Leitfaden. Handmuster-Karte zum Termin mitnehmen.');
   }
 
-  // 8b Projekte aus der Praxis: Einträge aus assets/fotos/projekte.json, vier pro Folie
+  // ---------- Abschnitt 01: Für Vereine (du) ----------
+  abschnitt('01', 'Für Vereine', 'Trikots, Teamwear und ein eigener Vereinsshop. Ohne Sammelbestellung, ohne Vorkasse durch den Verein.');
   {
-    const listFile = path.join(FOTOS, 'projekte.json');
-    const projekte = fs.existsSync(listFile) ? JSON.parse(fs.readFileSync(listFile, 'utf8')) : [];
-    const pages = Math.max(1, Math.ceil(projekte.length / 4));
-    for (let page = 0; page < pages; page++) {
-      const s = pres.addSlide({ masterName: 'MS_PROJEKTE' });
-      T(s, pages > 1 ? `Projekte aus der Praxis (${page + 1}/${pages})` : 'Projekte aus der Praxis');
-      P(s, 'sub', 'Beispiele aus der Werkstatt, vom Vereinsjubiläum bis zur Workwear.');
-      for (let i = 0; i < 4; i++) {
-        const pr = projekte[page * 4 + i];
-        await IMG(s, `projekt${i + 1}`, 'foto', G.projekt[i], pr && pr.foto, { gradient: !!pr });
-        if (pr) { P(s, `projekt${i + 1}_name`, pr.kunde); P(s, `projekt${i + 1}_text`, pr.text); }
-      }
-      s.addNotes(`Layout MS_PROJEKTE: ein großes und drei kleine Fotos mit Kunde und Kurztext im Bild (Folie ${page + 1} von ${pages}). Einträge in assets/fotos/projekte.json, Fotos daneben; der Build legt einen dunklen Verlauf unter die Bildunterschrift.`);
-    }
+    const s = pres.addSlide({ masterName: 'MS_PROZESS' });
+    T(s, 'Der Vereinsshop: bestellen statt Listen sammeln');
+    [
+      ['Kollektion festlegen', 'Ihr wählt Teile, Farben und Logo-Platzierung, wir bauen die Kollektion'],
+      ['Shop geht online', 'Eigene Seite auf maiershirts.de mit eurem Vereinslogo, Link und QR-Code'],
+      ['Jeder bestellt selbst', 'Größe wählen, bezahlen, fertig. Kein Sammeln, kein Vorstrecken'],
+      ['Lieferung nach Hause', 'Wir produzieren und versenden direkt. Nachbestellung jederzeit'],
+    ].forEach(([head, desc], i) => { P(s, `schritt${i + 1}`, head); P(s, `schritt${i + 1}_text`, desc); });
+    s.addNotes('Layout MS_PROZESS als Vereinsshop-Folie. Ansprache „ihr“, passend zum Vereinsteil.');
   }
-
-  // 8c Projekt im Detail: Emin Isic Montagebau
   {
-    const s = pres.addSlide({ masterName: 'MS_PROJEKT_KUNDE' });
-    T(s, 'Emin Isic Montagebau');
-    P(s, 'sub', 'Montagebetrieb, Tübingen · Arbeitskleidung für das ganze Team');
-    s.addText([
-      { text: 'Aufgabe', options: { bold: true, fontSize: FS.h, breakLine: true } },
-      { text: 'Einheitliche Arbeitskleidung vom Polo bis zum Sweatshirt, mit Firmenlogo auf der Brust und Handwerker-Motiv auf dem Rücken.', options: { fontSize: FS.sub, breakLine: true, paraSpaceAfter: 12 } },
-      { text: 'Umsetzung', options: { bold: true, fontSize: FS.h, breakLine: true } },
-      { text: 'Polo-Shirts und Zip-Sweatshirts in Weiß, Logo auf Brust und Ärmel', options: { bullet: true, fontSize: FS.sub, breakLine: true } },
-      { text: 'T-Shirts in Weiß und Rot mit Rückenmotiv', options: { bullet: true, fontSize: FS.sub, breakLine: true } },
-      { text: 'Einfarbiger Druck, waschbeständig für den Baustellenalltag', options: { bullet: true, fontSize: FS.sub, breakLine: true } },
-      { text: 'Artikel sind im System hinterlegt, Nachbestellung jederzeit möglich', options: { bullet: true, fontSize: FS.sub } },
-    ], { placeholder: 'body', isTextBox: true, paraSpaceAfter: 4, color: C.dark });
-    await IMG(s, 'hero', 'foto', G.kunde.hero, 'isic-kollektion');
-    const teile = [['isic-polo', 'Polo, Brust und Ärmel'], ['isic-zip', 'Zip-Sweatshirt, Ärmel'], ['isic-shirt', 'T-Shirt, Rückenmotiv']];
-    for (let i = 0; i < 3; i++) { await IMG(s, `teil${i + 1}`, 'foto', G.kunde.klein[i], teile[i][0]); P(s, `teil${i + 1}_name`, teile[i][1]); }
-    s.addNotes('Layout MS_PROJEKT_KUNDE: ein Kunde im Detail. Text links (Aufgabe, Umsetzung), Kollektionsfoto oben rechts, drei Einzelteile darunter mit Beschriftung. Fotos aus assets/fotos/isic-*.jpg.');
-  }
-
-  // 8d Kollektionsübersichten aus assets/fotos/kollektionen/<name>.json
-  {
+    // Kollektionsübersichten aus assets/fotos/kollektionen/<name>.json, je Gruppe eine Folie
     const kDir = path.join(FOTOS, 'kollektionen');
     const kFiles = fs.existsSync(kDir) ? fs.readdirSync(kDir).filter((f) => f.endsWith('.json')).sort() : [];
     for (const kf of kFiles) {
@@ -669,178 +656,55 @@ async function main() {
           P(s, 'sub', k.unterzeile || '');
           for (let i = 0; i < 12; i++) {
             const a = items[page * 12 + i];
-            if (!a) continue; // leere Kacheln bleiben Platzhalter
+            if (!a) continue;
             await IMG(s, `artikel${i + 1}`, 'foto', G.kollektion.tile(i), `kollektionen/${base}/${a.foto.replace(/\.[^.]+$/, '')}`, { fit: 'contain' });
             P(s, `artikel${i + 1}_name`, a.name);
             P(s, `artikel${i + 1}_preis`, a.preis || '');
           }
-          s.addNotes(`Layout MS_KOLLEKTION: bis zu zwölf Artikel mit Mockup, Name und Preis. Quelle: assets/fotos/kollektionen/${kf} (aus dem Shopify-Vereinsshop). Preise Stand Build-Datum.`);
+          s.addNotes(`Layout MS_KOLLEKTION: bis zu zwölf Artikel mit Mockup und Name. Quelle: assets/fotos/kollektionen/${kf} (aus dem Shopify-Vereinsshop).`);
         }
       }
     }
   }
+  await projekteSlide('projekte-vereine.json', 'Projekte für Vereine', 'Vom Jubiläums-Shirt bis zum Trainingslager: vier Beispiele aus der Werkstatt.');
+  await referenzSlides('vereine', 'Vereine, die auf uns setzen', 'MS_REFERENZEN_WAPPEN', REF_GRID.hoch, 'Eine Auswahl. Vereine aus der ganzen Region lassen bei uns ausstatten.');
 
-  // 8 Textil-Auswahl
+  // ---------- Abschnitt 02: Für Unternehmen (Sie) ----------
+  abschnitt('02', 'Für Unternehmen', 'Workwear, Teamkleidung und Werbetextilien mit Ihrem Logo. Waschbeständig, nachbestellbar, aus einer Hand.');
+  await projekteSlide('projekte-unternehmen.json', 'Projekte für Unternehmen', 'Workwear und Teamkleidung: Beispiele aus der Werkstatt.');
   {
-    const s = pres.addSlide({ masterName: 'MS_TEXTIL' });
-    T(s, 'Textilien für Ihr Projekt');
-    const textil = [
-      ['Polo-Shirt Piqué', 'Kariban Piqué · 220 g/m²\n8 Farben · S bis 4XL', 'ab 17,50 €'],
-      ['Cap', 'Beechfield Original · 6 Panel\n12 Farben · Einheitsgröße', 'ab 12,90 €'],
-      ['Hoodie Bio', 'Stanley/Stella Cruiser · 350 g/m²\n10 Farben · XS bis 3XL', 'ab 29,90 €'],
-    ];
-    for (let i = 0; i < 3; i++) {
-      await IMG(s, `textil${i + 1}_foto`, 'foto', G.textil(i), `textil-${i + 1}`);
-      P(s, `textil${i + 1}`, textil[i][0]); P(s, `textil${i + 1}_details`, textil[i][1]); P(s, `textil${i + 1}_preis`, textil[i][2]);
-    }
-    s.addNotes('Layout MS_TEXTIL: drei Rohlinge mit Foto, Name, Details und Preis ab. Beispielwerte.');
-  }
-
-  // 9 Preisstaffel
-  {
-    const s = pres.addSlide({ masterName: 'MS_PREISSTAFFEL' });
-    T(s, 'Preisstaffel T-Shirt, Brustdruck 1-farbig');
-    [['ab 10 Stück', '14,90 €'], ['ab 25 Stück', '12,90 €'], ['ab 50 Stück', '11,50 €'], ['ab 100 Stück', '9,90 €']].forEach(([stufe, preis], i) => {
-      P(s, `stufe${i + 1}`, stufe); P(s, `stufe${i + 1}_preis`, preis); P(s, `stufe${i + 1}_note`, 'pro Stück, netto\ninkl. Textil und Druck');
-    });
-    P(s, 'hinweis', 'Beispielwerte. Staffelpreise gelten je Motiv und Textil; Einrichtungskosten für den Siebdruck fallen einmalig an. Verbindlich ist das Angebot aus Lexware.');
-    s.addNotes('Layout MS_PREISSTAFFEL: vier Stufen Menge gegen Stückpreis, darunter Hinweise.');
-  }
-
-  // 10 Angebot
-  {
-    const s = pres.addSlide({ masterName: 'MS_ANGEBOT' });
-    T(s, 'Ihr Angebot im Überblick');
-    const hdr = (t, align = 'left') => ({ text: t, options: { bold: true, color: C.white, fill: { color: C.dark }, align, fontSize: FS.sub } });
-    const cell = (t, align = 'left', opts = {}) => ({ text: t, options: { align, fontSize: FS.sub, color: C.dark, ...opts } });
-    const sum = (t, align = 'left', opts = {}) => cell(t, align, { bold: true, fill: { color: C.beige }, ...opts });
-    const rows = [
-      [hdr('Pos.'), hdr('Artikel'), hdr('Menge', 'right'), hdr('Einzelpreis', 'right'), hdr('Gesamt', 'right')],
-      [cell('1'), cell('T-Shirt Bio-Baumwolle, Brustdruck 1-farbig'), cell('50', 'right'), cell('12,90 €', 'right'), cell('645,00 €', 'right')],
-      [cell('2'), cell('Hoodie, Rückendruck 2-farbig'), cell('25', 'right'), cell('34,50 €', 'right'), cell('862,50 €', 'right')],
-      [cell('3'), cell('Polo-Shirt, Logo-Stickerei'), cell('20', 'right'), cell('26,00 €', 'right'), cell('520,00 €', 'right')],
-      [cell('4'), cell('Einrichtungskosten Siebdruck'), cell('1', 'right'), cell('45,00 €', 'right'), cell('45,00 €', 'right')],
-      [sum(''), sum('Netto gesamt'), sum(''), sum(''), sum('2.072,50 €', 'right', { color: C.greenDark })],
-    ];
-    s.addTable(rows, {
-      x: 0.5, y: 1.35, w: 9.0, colW: [0.6, 4.6, 1.0, 1.4, 1.4],
-      fontFace: FONT, rowH: 0.4, border: { type: 'solid', color: C.beigeDark, pt: 0.75 },
-      fill: { color: C.white }, valign: 'middle', margin: [0.04, 0.1, 0.04, 0.1],
-    });
-    P(s, 'kond1', '15. Oktober 2026'); P(s, 'kond2', '10 Arbeitstage nach Freigabe'); P(s, 'kond3', '14 Tage netto');
-    P(s, 'hinweis', 'Beispielpositionen · Preise netto zzgl. MwSt. · Verbindlich ist das Angebot Nr. 2026-0815 aus Lexware.');
-    s.addNotes('Layout MS_ANGEBOT: Tabelle als Zusammenfassung (nativ, in PowerPoint editierbar), Konditionen als Platzhalter. Das verbindliche Angebot kommt aus Lexware.');
-  }
-
-  // 11 Referenzen: eine Folie pro Unterordner in assets/referenzen/ (unternehmen, vereine)
-  // Logos alphabetisch (z. B. 01-firma.png), freie Felder bleiben Platzhalter
-  const refRoot = path.join(ASSETS, 'referenzen');
-  const refGroups = [
-    ['unternehmen', 'Unternehmen, die uns vertrauen', 'MS_REFERENZEN', REF_GRID.breit, 'Eine Auswahl. Viele weitere Unternehmen und Teams aus der Region lassen bei uns veredeln.'],
-    ['vereine', 'Vereine, die uns vertrauen', 'MS_REFERENZEN_WAPPEN', REF_GRID.hoch, 'Eine Auswahl. Vom Trikotsatz bis zur Fanausstattung, für Vereine aus der ganzen Region.'],
-  ];
-  for (const [group, titel, layout, grid, unterzeile] of refGroups) {
-    const refDir = path.join(refRoot, group);
-    const refs = fs.existsSync(refDir) ? fs.readdirSync(refDir).filter((f) => /\.(png|jpe?g|svg)$/i.test(f)).sort() : [];
-    const namenFile = path.join(refDir, 'namen.json');
-    const namen = fs.existsSync(namenFile) ? JSON.parse(fs.readFileSync(namenFile, 'utf8')) : {};
-    const nameOf = (f) => namen[f] || f.replace(/^\d+-/, '').replace(/\.[^.]+$/, '').replace(/-/g, ' ');
-    const cells = grid.cols * grid.rows;
-    const pages = Math.max(1, Math.ceil(refs.length / cells)); // mehr Logos als Felder: automatisch Fortsetzungsfolie
-    for (let page = 0; page < pages; page++) {
-    const pageRefs = refs.slice(page * cells, (page + 1) * cells);
-    const s = pres.addSlide({ masterName: layout });
-    T(s, pages > 1 ? `${titel} (${page + 1}/${pages})` : titel);
-    P(s, 'sub', unterzeile);
-    for (let i = 0; i < cells; i++) {
-      const [x, y, w, h] = G.logoGrid(grid, Math.floor(i / grid.cols), i % grid.cols);
-      if (pageRefs[i]) {
-        // Luft zum Kartenrand; Logo proportional eingepasst und zentriert (pptxgenjs kennt die Bildmaße nicht)
-        const pad = 0.16, boxW = w - 2 * pad, boxH = h - 2 * pad;
-        // Weiße bzw. transparente Ränder der Datei abschneiden, damit alle Logos ähnlich groß wirken
-        const file = path.join(TMP, `ref-${group}-${page}-${i}.png`);
-        await sharp(path.join(refDir, pageRefs[i])).trim({ threshold: 25 }).png().toFile(file);
-        const meta = await sharp(file).metadata();
-        const scale = Math.min(boxW / meta.width, boxH / meta.height);
-        const lw = meta.width * scale, lh = meta.height * scale;
-        const lx = x + pad + (boxW - lw) / 2, ly = y + pad + (boxH - lh) / 2;
-        s.addImage({ placeholder: `logo${i + 1}`, path: file, x: lx, y: ly, w: lw, h: lh });
-        // pptxgenjs setzt bei Platzhalterbildern immer die Platzhalterposition; die zentrierte Position wird im Paket nachgetragen
-        const phObj = s._slideLayout._slideObjects.find((o) => o.options && o.options.placeholder === `logo${i + 1}`);
-        PIC_FIX.push({ slideNum: s._slideNum, idx: phObj.options._placeholderIdx, x: lx, y: ly });
-        if (grid.caption) P(s, `name${i + 1}`, nameOf(pageRefs[i]));
-      } else {
-        await IMG(s, `logo${i + 1}`, 'logo', [x, y, w, h]);
-      }
-    }
-    s.addNotes(`Layout ${layout}: ${cells} Logo-Felder. ${pageRefs.length} Logo(s) aus assets/referenzen/${group} eingesetzt (Folie ${page + 1} von ${pages}). Logo per Klick auf das Platzhalterbild einsetzen; bei Beschnitt: Bildformat → Zuschneiden → Anpassen.`);
-    }
-  }
-
-  // 13 Bild links, Text rechts
-  {
-    const s = pres.addSlide({ masterName: 'MS_BILD' });
-    T(s, 'Stickerei im Detail');
-    await IMG(s, 'foto', 'foto', G.bild, 'bild');
+    const s = pres.addSlide({ masterName: 'MS_PROJEKT_KUNDE' });
+    T(s, 'Im Detail: Emin Isic Montagebau');
+    P(s, 'sub', 'Montagebetrieb, Tübingen · Arbeitskleidung für das ganze Team');
     s.addText([
-      { text: 'Bis zu 12 Garnfarben pro Motiv', options: { bullet: true, breakLine: true } },
-      { text: 'Waschbeständig bis 60 °C', options: { bullet: true, breakLine: true } },
-      { text: 'Ideal für Polos, Jacken und Caps', options: { bullet: true, breakLine: true } },
-      { text: 'Motivdigitalisierung im Haus', options: { bullet: true } },
-    ], { placeholder: 'body', isTextBox: true, paraSpaceAfter: 8 });
-    s.addNotes('Layout MS_BILD: Foto links, Textkörper rechts.');
+      { text: 'Aufgabe', options: { bold: true, fontSize: FS.h, breakLine: true } },
+      { text: 'Einheitliche Arbeitskleidung vom Polo bis zum Sweatshirt, mit Firmenlogo auf der Brust und Handwerker-Motiv auf dem Rücken.', options: { fontSize: FS.sub, breakLine: true, paraSpaceAfter: 12 } },
+      { text: 'Umsetzung', options: { bold: true, fontSize: FS.h, breakLine: true } },
+      { text: 'Polo-Shirts und Zip-Sweatshirts in Weiß, Logo auf Brust und Ärmel', options: { bullet: true, fontSize: FS.sub, breakLine: true } },
+      { text: 'T-Shirts in Weiß und Rot mit Rückenmotiv', options: { bullet: true, fontSize: FS.sub, breakLine: true } },
+      { text: 'Einfarbiger Druck, waschbeständig für den Baustellenalltag', options: { bullet: true, fontSize: FS.sub, breakLine: true } },
+      { text: 'Artikel sind im System hinterlegt, Nachbestellung jederzeit möglich', options: { bullet: true, fontSize: FS.sub } },
+    ], { placeholder: 'body', isTextBox: true, paraSpaceAfter: 4, color: C.dark });
+    await IMG(s, 'hero', 'foto', G.kunde.hero, 'isic-kollektion');
+    const teile = [['isic-polo', 'Polo, Brust und Ärmel'], ['isic-zip', 'Zip-Sweatshirt, Ärmel'], ['isic-shirt', 'T-Shirt, Rückenmotiv']];
+    for (let i = 0; i < 3; i++) { await IMG(s, `teil${i + 1}`, 'foto', G.kunde.klein[i], teile[i][0]); P(s, `teil${i + 1}_name`, teile[i][1]); }
+    s.addNotes('Layout MS_PROJEKT_KUNDE: ein Kunde im Detail. Text links, Kollektionsfoto oben rechts, drei Einzelteile darunter.');
   }
+  await referenzSlides('unternehmen', 'Unternehmen, die auf uns setzen', 'MS_REFERENZEN', REF_GRID.breit, 'Eine Auswahl. Viele weitere Unternehmen und Teams aus der Region lassen bei uns veredeln.');
 
-  // 14 Diagramm
-  {
-    const s = pres.addSlide({ masterName: 'MS_FREI' });
-    T(s, 'Auftragsvolumen nach Produktgruppe');
-    s.addChart(pres.charts.BAR, [
-      { name: 'Aufträge', labels: ['T-Shirts', 'Hoodies', 'Polos', 'Workwear', 'Caps'], values: [420, 260, 180, 150, 90] },
-    ], {
-      x: 0.5, y: 1.3, w: 5.8, h: 3.6,
-      barDir: 'col', chartColors: [C.green],
-      showTitle: false, showLegend: false,
-      showValue: true, dataLabelPosition: 'outEnd', dataLabelFontFace: FONT, dataLabelFontSize: FS.sub, dataLabelColor: C.dark,
-      catAxisLabelFontFace: FONT, catAxisLabelFontSize: FS.sub, catAxisLabelColor: C.dark,
-      valAxisLabelFontFace: FONT, valAxisLabelFontSize: FS.label, valAxisLabelColor: C.dark,
-      valGridLine: { color: C.beigeDark, size: 0.5 }, catGridLine: { style: 'none' },
-      valAxisLineShow: false, catAxisLineShow: false,
-    });
-    s.addShape('roundRect', { x: 6.6, y: 1.3, w: 2.9, h: 3.6, fill: { color: C.beige }, line: { color: C.beige }, rectRadius: 0.12 });
-    s.addText('Beispieldaten', { x: 6.85, y: 1.5, w: 2.4, h: 0.3, fontFace: FONT, fontSize: FS.sub, ...MUTED_ON_LIGHT, margin: 0, isTextBox: true });
-    s.addText('T-Shirts machen den größten Anteil aus', { x: 6.85, y: 1.85, w: 2.4, h: 0.7, fontFace: FONT, fontSize: FS.h, bold: true, color: C.dark, margin: 0, isTextBox: true });
-    s.addText('Natives Diagramm: Werte per Rechtsklick → „Daten bearbeiten“ ändern.', { x: 6.85, y: 2.65, w: 2.4, h: 1.2, fontFace: FONT, fontSize: FS.sub, ...MUTED_ON_LIGHT, valign: 'top', margin: 0, isTextBox: true });
-    s.addNotes('Layout MS_FREI mit nativem Säulendiagramm links und Kernaussage rechts.');
-  }
-
-  // 15 Standardfolie
-  {
-    const s = pres.addSlide({ masterName: 'MS_INHALT' });
-    T(s, 'Folientitel');
-    s.addText([
-      { text: 'Erste Aussage der Folie', options: { bullet: true, breakLine: true } },
-      { text: 'Zweite Aussage mit einer kurzen Erläuterung', options: { bullet: true, breakLine: true } },
-      { text: 'Dritte Aussage', options: { bullet: true, breakLine: true } },
-      { text: 'Unterpunkt zur dritten Aussage', options: { bullet: true, indentLevel: 1, breakLine: true } },
-      { text: 'Weiterer Unterpunkt', options: { bullet: true, indentLevel: 1 } },
-    ], { placeholder: 'body', isTextBox: true, paraSpaceAfter: 8 });
-    s.addNotes('Layout MS_INHALT: Titel und Textkörper mit Aufzählung.');
-  }
-
-  // 16 Abschluss
+  // ---------- Abschluss ----------
   {
     const s = pres.addSlide({ masterName: 'MS_ABSCHLUSS' });
-    T(s, 'Lassen Sie uns Ihr Projekt starten');
-    P(s, 'sub', 'Wir freuen uns auf Ihre Freigabe und begleiten Sie bis zur Lieferung.');
+    T(s, 'Der nächste Schritt');
+    P(s, 'sub', 'Motiv und Wunschtextil schicken, wir melden uns innerhalb von 48 Stunden mit Angebot und Mockup.');
     await IMG(s, 'portrait', 'portrait', G.portrait);
     P(s, 'name', 'Stefan Maier');
-    P(s, 'rolle', 'Inhaber · Ihr Ansprechpartner');
-    P(s, 'kontakt', '+49 (0) 000 000000\ninfo@maiershirts.de');
-    P(s, 'schritt', 'Freigabe des Angebots bis 15. Oktober 2026. Danach Musterfreigabe, Produktion und Lieferung zum Saisonstart.');
+    P(s, 'rolle', 'Inhaber');
+    P(s, 'kontakt', `${KONTAKT_TEL}\n${KONTAKT_MAIL}`);
+    P(s, 'schritt', 'Anfrage per Mail oder Telefon, Angebot innerhalb von 48 Stunden. Für Vereine: Termin zur Kollektionsplanung, danach geht der Shop online.');
     await IMG(s, 'qr', 'qr', G.qr);
-    P(s, 'qr_text', 'Anfrage online:\nmaiershirts.de/anfrage');
-    s.addNotes('Layout MS_ABSCHLUSS: Handlungsaufforderung, Ansprechpartner mit Foto, nächster Schritt mit Termin, QR-Code. Kontaktdaten sind Platzhalter.');
+    P(s, 'qr_text', 'Anfrage online:\nmaiershirts.de');
+    s.addNotes('Layout MS_ABSCHLUSS. Porträt und QR-Code sind Platzhalterbilder: eigenes Foto und einen echten QR-Code (z. B. auf maiershirts.de) einsetzen.');
   }
 
   // ---------- Schreiben ----------

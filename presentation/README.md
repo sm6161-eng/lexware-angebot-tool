@@ -9,10 +9,10 @@ Warm Sand `#E8DFD0`, Sand Dark `#D9D2C5`, Weiß. Schrift: Inter.
 | Datei | Zweck |
 |---|---|
 | `dist/Maiershirts_Master.potx` | **Die Vorlage.** Doppelklick öffnet eine neue Präsentation mit allen Layouts und Platzhaltern. |
-| `dist/Maiershirts_Master.pptx` | Beispieldeck: jedes Layout einmal mit Musterinhalt (23 Folien). Zum Abschauen und Kopieren. |
+| `dist/Maiershirts_Master.pptx` | Firmenpräsentation (16 Folien): gemeinsamer Einstieg, Abschnitt „Für Vereine“ (du), Abschnitt „Für Unternehmen“ (Sie), Abschluss. Layouts ohne Beispielfolie (Kennzahlen, Preisstaffel, Angebot, Textil, Diagramm) sind nur in der Vorlage. |
 | `assets/logo.svg` | Original-Logo (Vektor) |
 | `assets/logo-dark.png`, `assets/logo-light.png` | Logo schwarz (helle Folien) und weiß (dunkle Folien), erzeugt aus `logo.svg` |
-| `assets/fotos/` | Echte Fotos für das Beispieldeck: `vollbild`, `bild`, `textil-1` bis `textil-3`, `projekt-1` bis `projekt-4`, `isic-kollektion`, `isic-polo`, `isic-zip`, `isic-shirt`. Kollektionen: `kollektionen/<name>.json` plus Bilder in `kollektionen/<name>/`, je Gruppe eine Folie (jpg/png). Fehlt eine Datei, setzt der Build ein Platzhalterbild. |
+| `assets/fotos/` | Echte Fotos für das Beispieldeck: `vollbild`, `bild`, `textil-1` bis `textil-3`, `projekt-1` bis `projekt-7` (Zuordnung in `projekte-vereine.json` und `projekte-unternehmen.json`), `isic-kollektion`, `isic-polo`, `isic-zip`, `isic-shirt`. Kollektionen: `kollektionen/<name>.json` plus Bilder in `kollektionen/<name>/`, je Gruppe eine Folie (jpg/png). Fehlt eine Datei, setzt der Build ein Platzhalterbild. |
 | `assets/referenzen/unternehmen/`, `.../vereine/` | Kundenlogos für die Referenzfolien, nummeriert (`01-name.png`). Vereine: Namen in `namen.json`. |
 | `build.js` | Erzeugt POTX und PPTX (`npm run build`) |
 | `make-logo.js` | Erzeugt die beiden Logo-PNGs aus `logo.svg` (`npm run logo`) |
@@ -20,8 +20,8 @@ Warm Sand `#E8DFD0`, Sand Dark `#D9D2C5`, Weiß. Schrift: Inter.
 ## So wird gearbeitet
 
 1. `Maiershirts_Master.potx` doppelklicken. PowerPoint öffnet eine neue
-   Präsentation mit den Maiershirts-Layouts und den 23 Musterfolien.
-   Nicht benötigte Musterfolien löschen, die Vorlage selbst bleibt unverändert.
+   Präsentation mit den Maiershirts-Layouts und den 16 Folien der Firmenpräsentation.
+   Nicht benötigte Folien löschen, die Vorlage selbst bleibt unverändert.
 2. Folien über **Start → Neue Folie** anlegen und das passende Layout wählen.
    Jede Folie hat Platzhalter mit Hinweistext (z. B. „Foto einfügen“,
    „Was die Zahl bedeutet“). Platzhalter anklicken und ausfüllen.
@@ -59,7 +59,7 @@ exportieren, dann ist die Schrift eingebettet.
 | `MS_TEXTIL` | Drei Textilien mit Foto, Details und Preis ab | 3 × Foto, Name, Details, Preis |
 | `MS_PREISSTAFFEL` | Vier Stufen Menge gegen Stückpreis | 4 × Stufe, Preis, Zusatz; Hinweis |
 | `MS_ANGEBOT` | Angebotsübersicht mit Konditionen | Titel, Gültig bis, Lieferzeit, Zahlung, Hinweis (Tabelle: Musterfolie kopieren) |
-| `MS_REFERENZEN` | Logo-Raster 4 × 3 für breite Firmenlogos | 12 × Logo |
+| `MS_REFERENZEN` | Logo-Raster 4 × 4 für breite Firmenlogos | 16 × Logo |
 | `MS_REFERENZEN_WAPPEN` | Logo-Raster 4 × 2 mit hohen Feldern für Vereinswappen | 8 × Logo |
 | `MS_ABSCHLUSS` | Handlungsaufforderung, Ansprechpartner, nächster Schritt, dunkel | Titel, Text, Porträt, Name, Rolle, Kontakt, nächster Schritt, QR-Code, QR-Text |
 
@@ -91,8 +91,9 @@ Empfehlung: Vorlage per Skript fertigstellen, dann die POTX ans Team geben
 und dort nur noch in PowerPoint arbeiten. Das Skript ist zum Erzeugen der
 Vorlage gedacht, nicht zur Pflege einzelner Präsentationen.
 
-## Beispielinhalte
+## Inhalte
 
-Alle Texte, Zahlen, Preise, Kontaktdaten und Bilder im Beispieldeck sind
-Platzhalter (siehe Notizen der jeweiligen Folie). Preise im Deck sind eine
-Zusammenfassung; verbindlich ist immer das Angebot aus Lexware.
+Die Firmenpräsentation nutzt echte Kundenlogos, Projektfotos und die
+SPG-Kollektion aus dem Shop. Noch Platzhalter: Porträt und QR-Code auf der
+Abschlussfolie (siehe Notizen der Folie). Preise stehen bewusst nicht im Deck;
+verbindlich ist immer das Angebot aus Lexware.
