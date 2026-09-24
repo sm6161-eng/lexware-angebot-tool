@@ -627,7 +627,7 @@ async function main() {
   }
 
   // ---------- Abschnitt 01: Für Vereine (du) ----------
-  abschnitt('01', 'Für Vereine', 'Trikots, Teamwear und ein eigener Vereinsshop. Ohne Sammelbestellung, ohne Vorkasse durch den Verein.');
+  abschnitt('01', 'Für Vereine', 'Trikots, Teamwear und ein eigener Vereinsshop. Ohne Sammelliste, ohne Vorkasse durch den Verein.');
   {
     const s = pres.addSlide({ masterName: 'MS_PROZESS' });
     T(s, 'Der Vereinsshop: bestellen statt Listen sammeln');
@@ -635,7 +635,7 @@ async function main() {
       ['Kollektion festlegen', 'Ihr wählt Teile, Farben und Logo-Platzierung, wir bauen die Kollektion'],
       ['Shop geht online', 'Eigene Seite auf maiershirts.de mit eurem Vereinslogo, Link und QR-Code'],
       ['Jeder bestellt selbst', 'Größe wählen, bezahlen, fertig. Kein Sammeln, kein Vorstrecken'],
-      ['Lieferung nach Hause', 'Wir produzieren und versenden direkt. Nachbestellung jederzeit'],
+      ['Abholung im Verein', 'Wir produzieren, der Verein holt gesammelt ab oder erhält alles auf einmal. Nachbestellung jederzeit'],
     ].forEach(([head, desc], i) => { P(s, `schritt${i + 1}`, head); P(s, `schritt${i + 1}_text`, desc); });
     s.addNotes('Layout MS_PROZESS als Vereinsshop-Folie. Ansprache „ihr“, passend zum Vereinsteil.');
   }
